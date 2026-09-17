@@ -1,0 +1,51 @@
+---
+import { siteConfig } from '@config';
+import { url } from '@/lib/url';
+import Container from './Container.astro';
+
+/**
+ * The build timestamp is the site's honesty marker: it tells a reader exactly
+ * how fresh what they are looking at is.
+ */
+const builtAt = new Date();
+const builtAtLabel = builtAt.toLocaleString('en-GB', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+});
+---
+
+<footer class="mt-20 border-t border-border bg-surface-muted">
+  <Container>
+    <div class="flex flex-col gap-6 py-10 sm:flex-row sm:items-start sm:justify-between">
+      <div class="max-w-sm">
+        <p class="text-sm font-semibold text-ink">{siteConfig.name}</p>
+        <p class="mt-1.5 text-sm text-ink-secondary">{siteConfig.tagline}</p>
+        <p class="mt-3 text-xs text-ink-muted">
+          Maintained by {siteConfig.organization}. Every page on this site is generated
+          from files in the repository — to change something, open a pull request.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-2 text-sm sm:items-end">
+        <a
+          href={siteConfig.repository.url}
+          class="text-ink-secondary transition-colors hover:text-accent"
+          rel="noreferrer">Repository</a
+        >
+        <a
+          href={url('/about')}
+          class="text-ink-secondary transition-colors hover:text-accent">How to contribute</a
+        >
+        <a
+          href={siteConfig.contact.url}
+          class="text-ink-secondary transition-colors hover:text-accent"
+          rel="noreferrer">{siteConfig.contact.label}</a
+        >
+        <p class="mt-2 text-xs text-ink-muted">
+          Last built <time datetime={builtAt.toISOString()}>{builtAtLabel} UTC</time>
+        </p>
+      </div>
+    </div>
+  </Container>
+</footer>

@@ -1,0 +1,40 @@
+---
+import type { Tone } from '@config';
+import { toneChipClass, toneSolidClass } from '@/lib/tone';
+
+/**
+ * A small labelled chip used for lifecycle stages, categories and impact
+ * levels. The label is always rendered as text — colour alone never carries
+ * meaning, so the site stays readable for colour-blind users and in print.
+ */
+interface Props {
+  tone?: Tone;
+  /** Optional leading dot in the tone's solid colour. */
+  dot?: boolean;
+  size?: 'sm' | 'md';
+  /** Native tooltip, typically the stage or impact description. */
+  title?: string;
+  class?: string;
+}
+
+const {
+  tone = 'gray',
+  dot = false,
+  size = 'sm',
+  title,
+  class: className = '',
+} = Astro.props;
+
+const sizes = {
+  sm: 'text-[0.6875rem] px-2 py-0.5 gap-1.5',
+  md: 'text-xs px-2.5 py-1 gap-2',
+} as const;
+---
+
+<span
+  class={`inline-flex items-center rounded-badge border font-medium whitespace-nowrap ${toneChipClass[tone]} ${sizes[size]} ${className}`}
+  title={title}
+>
+  {dot && <span class={`size-1.5 shrink-0 rounded-full ${toneSolidClass[tone]}`} aria-hidden="true" />}
+  <slot />
+</span>

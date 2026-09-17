@@ -1,0 +1,21 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import EmptyState from '@/components/EmptyState.astro';
+---
+
+<BaseLayout
+  title="Changes"
+  description="Rollouts, deprecations and breaking changes, in the order they will reach you."
+>
+  <PageHeader
+    title="Upcoming changes"
+    lede="Everything the platform teams are about to change, in date order. Start here if you want to know what will break, what needs action from you, and by when."
+  />
+  <Container>
+    <div class="py-10">
+      <EmptyState title="The changes feed is built in milestone 3." />
+    </div>
+  </Container>
+</BaseLayout>

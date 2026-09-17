@@ -1,0 +1,19 @@
+---
+/** Page width wrapper. `wide` is for the roadmap, which needs the room. */
+interface Props {
+  width?: 'narrow' | 'default' | 'wide';
+  class?: string;
+}
+
+const { width = 'default', class: className = '' } = Astro.props;
+
+const widths = {
+  narrow: 'max-w-3xl',
+  default: 'max-w-6xl',
+  wide: 'max-w-[90rem]',
+} as const;
+---
+
+<div class={`mx-auto w-full ${widths[width]} px-4 sm:px-6 lg:px-8 ${className}`}>
+  <slot />
+</div>

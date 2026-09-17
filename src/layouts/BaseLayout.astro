@@ -1,0 +1,80 @@
+---
+import '@fontsource-variable/inter';
+import '@/styles/global.css';
+
+import { siteConfig } from '@config';
+import { url } from '@/lib/url';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+
+interface Props {
+  /** Page title, without the site name — that is appended here. */
+  title?: string;
+  description?: string;
+}
+
+const { title, description = siteConfig.description } = Astro.props;
+
+const fullTitle = title ? `${title} · ${siteConfig.name}` : `${siteConfig.name} — ${siteConfig.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'http://localhost:4321');
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteConfig.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${siteConfig.name} — all updates`}
+      href={url('/feed.xml')}
+    />
+
+    {/*
+      Applies the saved (or system) theme before first paint so the page never
+      flashes the wrong colours. Must stay inline and un-deferred.
+    */}
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('signpost-theme');
+          var prefersDark =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme =
+            stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="flex min-h-screen flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-badge focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-accent-ink"
+    >
+      Skip to content
+    </a>
+
+    <Header />
+
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,143 @@
+---
+import { siteConfig } from '@config';
+import { url, isActive } from '@/lib/url';
+import Container from './Container.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const nav = [
+  { href: '/roadmap', label: 'Roadmap' },
+  { href: '/changes', label: 'Changes' },
+  { href: '/streamlines', label: 'Streamlines' },
+  { href: '/teams', label: 'Teams' },
+  { href: '/about', label: 'About' },
+];
+
+const current = Astro.url.pathname;
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-border bg-canvas/85 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/70"
+>
+  <Container>
+    <div class="flex h-16 items-center justify-between gap-4">
+      <a
+        href={url('/')}
+        class="flex shrink-0 items-center gap-2.5 text-[0.9375rem] font-semibold tracking-tight text-ink"
+      >
+        <svg
+          class="size-5 text-accent"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 21V10"></path>
+          <path d="M4 5h11l3 2.5L15 10H4z"></path>
+          <path d="M20 14H9l-3 2.5L9 19h11z"></path>
+        </svg>
+        {siteConfig.name}
+      </a>
+
+      <nav aria-label="Main" class="hidden items-center gap-1 md:flex">
+        {
+          nav.map((item) => {
+            const active = isActive(item.href, current);
+            return (
+              <a
+                href={url(item.href)}
+                aria-current={active ? 'page' : undefined}
+                class={`rounded-badge px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-accent-soft text-accent'
+                    : 'text-ink-secondary hover:bg-surface-muted hover:text-ink'
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })
+        }
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <a
+          href={siteConfig.repository.url}
+          class="hidden rounded-badge border border-border px-3 py-1.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink sm:inline-flex"
+          rel="noreferrer"
+        >
+          Contribute
+        </a>
+        <ThemeToggle />
+        <button
+          type="button"
+          id="nav-toggle"
+          class="inline-flex size-9 items-center justify-center rounded-badge border border-border text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink md:hidden"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
+        >
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </Container>
+
+  <nav
+    id="mobile-nav"
+    aria-label="Main"
+    class="hidden border-t border-border bg-canvas md:hidden"
+  >
+    <Container>
+      <div class="flex flex-col gap-1 py-3">
+        {
+          nav.map((item) => {
+            const active = isActive(item.href, current);
+            return (
+              <a
+                href={url(item.href)}
+                aria-current={active ? 'page' : undefined}
+                class={`rounded-badge px-3 py-2 text-sm font-medium ${
+                  active ? 'bg-accent-soft text-accent' : 'text-ink-secondary'
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })
+        }
+        <a
+          href={siteConfig.repository.url}
+          class="rounded-badge px-3 py-2 text-sm font-medium text-ink-secondary"
+          rel="noreferrer"
+        >
+          Contribute
+        </a>
+      </div>
+    </Container>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('mobile-nav');
+
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    toggle.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+    menu?.classList.toggle('hidden', open);
+  });
+</script>

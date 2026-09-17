@@ -1,0 +1,17 @@
+---
+/** Shown when a list has nothing in it, or a filter matches nothing. */
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<div
+  class="rounded-card border border-dashed border-border-strong bg-surface px-6 py-14 text-center"
+>
+  <p class="text-sm font-medium text-ink">{title}</p>
+  {description && <p class="mx-auto mt-1.5 max-w-md text-sm text-ink-secondary">{description}</p>}
+  <slot />
+</div>

@@ -1,0 +1,41 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import { siteConfig } from '@config';
+import { url } from '@/lib/url';
+---
+
+<BaseLayout>
+  <Container>
+    <section class="py-16 sm:py-20">
+      <h1 class="max-w-3xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+        {siteConfig.tagline}
+      </h1>
+      <p class="mt-4 max-w-2xl text-base leading-relaxed text-ink-secondary">
+        {siteConfig.description}
+      </p>
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a
+          href={url('/roadmap')}
+          class="rounded-badge bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover"
+        >
+          See the roadmap
+        </a>
+        <a
+          href={url('/changes')}
+          class="rounded-badge border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+        >
+          What's changing soon
+        </a>
+      </div>
+    </section>
+
+    <section class="pb-16">
+      <EmptyState
+        title="The home page is assembled in milestone 4."
+        description="It will show what needs your attention, the latest updates across every team, and a summary of the platform landscape."
+      />
+    </section>
+  </Container>
+</BaseLayout>

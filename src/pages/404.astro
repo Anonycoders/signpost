@@ -1,0 +1,34 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import { url } from '@/lib/url';
+---
+
+<BaseLayout title="Page not found">
+  <Container width="narrow">
+    <div class="py-24 text-center">
+      <p class="text-sm font-medium text-accent">404</p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        That page isn't here
+      </h1>
+      <p class="mx-auto mt-3 max-w-md text-[0.9375rem] leading-relaxed text-ink-secondary">
+        A streamline may have been renamed or retired since this link was shared. The
+        catalog lists everything that exists today.
+      </p>
+      <div class="mt-7 flex flex-wrap justify-center gap-3">
+        <a
+          href={url('/streamlines')}
+          class="rounded-badge bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent-hover"
+        >
+          Browse streamlines
+        </a>
+        <a
+          href={url('/')}
+          class="rounded-badge border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+        >
+          Go home
+        </a>
+      </div>
+    </div>
+  </Container>
+</BaseLayout>

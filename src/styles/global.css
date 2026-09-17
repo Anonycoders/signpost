@@ -1,0 +1,309 @@
+@import 'tailwindcss';
+
+/*
+ * Dark mode is driven by a `data-theme` attribute on <html>, set before first
+ * paint by the inline script in BaseLayout. Using an attribute rather than a
+ * class keeps the "system / light / dark" choice explicit and flash-free.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', 'Menlo', 'Cascadia Mono', 'Roboto Mono', monospace;
+
+  /* ---------- Surfaces and text (light theme values) ---------- */
+  --color-canvas: #fcfcfd;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f7f9;
+  --color-surface-raised: #ffffff;
+
+  --color-border: #e5e8ed;
+  --color-border-strong: #d2d7e0;
+
+  --color-ink: #14181f;
+  --color-ink-secondary: #4a5463;
+  --color-ink-muted: #78828f;
+
+  --color-accent: #3d4fd9;
+  --color-accent-hover: #3342bd;
+  --color-accent-soft: #eef0fe;
+  --color-accent-ink: #ffffff;
+
+  /* ---------- Tones ----------
+   * Every stage, category and impact level maps to one of these.
+   * Each has: soft background, border, readable text, and a solid fill
+   * (used for timeline bars and dots).
+   */
+  --color-tone-gray-bg: #f1f3f5;
+  --color-tone-gray-border: #dde1e6;
+  --color-tone-gray-ink: #495057;
+  --color-tone-gray-solid: #98a2b0;
+
+  --color-tone-blue-bg: #e9f0ff;
+  --color-tone-blue-border: #c6d9fd;
+  --color-tone-blue-ink: #1b4ed4;
+  --color-tone-blue-solid: #3b82f6;
+
+  --color-tone-violet-bg: #f1ecfe;
+  --color-tone-violet-border: #ddd1fb;
+  --color-tone-violet-ink: #6435c7;
+  --color-tone-violet-solid: #8b5cf6;
+
+  --color-tone-green-bg: #e4f7ed;
+  --color-tone-green-border: #bde9d0;
+  --color-tone-green-ink: #12744a;
+  --color-tone-green-solid: #1fa463;
+
+  --color-tone-amber-bg: #fef3e3;
+  --color-tone-amber-border: #fadfb0;
+  --color-tone-amber-ink: #925408;
+  --color-tone-amber-solid: #ee900f;
+
+  --color-tone-red-bg: #feecec;
+  --color-tone-red-border: #fbcecc;
+  --color-tone-red-ink: #bd2f28;
+  --color-tone-red-solid: #ef4444;
+
+  --color-tone-teal-bg: #e0f6f4;
+  --color-tone-teal-border: #b5e7e1;
+  --color-tone-teal-ink: #0e6f67;
+  --color-tone-teal-solid: #14a89a;
+
+  --color-tone-pink-bg: #fdecf3;
+  --color-tone-pink-border: #fbcedf;
+  --color-tone-pink-ink: #b32f61;
+  --color-tone-pink-solid: #ec4899;
+
+  /* ---------- Shape ---------- */
+  --radius-card: 0.75rem;
+  --radius-badge: 0.375rem;
+}
+
+/* ---------- Dark theme overrides ----------
+ * Same variable names, different values, so every utility and component
+ * switches theme without a single `dark:` class.
+ */
+:root[data-theme='dark'] {
+  --color-canvas: #0c0e12;
+  --color-surface: #14171d;
+  --color-surface-muted: #1a1e26;
+  --color-surface-raised: #191d24;
+
+  --color-border: #262b34;
+  --color-border-strong: #363d49;
+
+  --color-ink: #eef1f5;
+  --color-ink-secondary: #a7b0bd;
+  --color-ink-muted: #7d8794;
+
+  --color-accent: #8f9bfb;
+  --color-accent-hover: #a6b0fc;
+  --color-accent-soft: #1b2044;
+  --color-accent-ink: #0c0e12;
+
+  --color-tone-gray-bg: #21262e;
+  --color-tone-gray-border: #333a45;
+  --color-tone-gray-ink: #b0b8c2;
+  --color-tone-gray-solid: #6b7580;
+
+  --color-tone-blue-bg: #16243f;
+  --color-tone-blue-border: #26395e;
+  --color-tone-blue-ink: #97b7fc;
+  --color-tone-blue-solid: #4b82f0;
+
+  --color-tone-violet-bg: #241c40;
+  --color-tone-violet-border: #382b60;
+  --color-tone-violet-ink: #bfa8fb;
+  --color-tone-violet-solid: #8b5cf6;
+
+  --color-tone-green-bg: #10291e;
+  --color-tone-green-border: #1d4432;
+  --color-tone-green-ink: #83d8a9;
+  --color-tone-green-solid: #22a565;
+
+  --color-tone-amber-bg: #2e2011;
+  --color-tone-amber-border: #49341b;
+  --color-tone-amber-ink: #f5c77f;
+  --color-tone-amber-solid: #d9840d;
+
+  --color-tone-red-bg: #2e1717;
+  --color-tone-red-border: #4b2624;
+  --color-tone-red-ink: #f8a9a5;
+  --color-tone-red-solid: #e4483f;
+
+  --color-tone-teal-bg: #0d2826;
+  --color-tone-teal-border: #17423e;
+  --color-tone-teal-ink: #7cdbd1;
+  --color-tone-teal-solid: #14a89a;
+
+  --color-tone-pink-bg: #2d1622;
+  --color-tone-pink-border: #472436;
+  --color-tone-pink-ink: #f6a6c3;
+  --color-tone-pink-solid: #ec4899;
+}
+
+/* ---------- Base ---------- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv05' 1, 'ss01' 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ---------- Long-form content ----------
+ * Used for the Markdown body of a streamline and for update bodies.
+ * Kept hand-written so it themes with the tokens above.
+ */
+@layer components {
+  .prose {
+    color: var(--color-ink-secondary);
+    line-height: 1.7;
+  }
+
+  .prose > * + * {
+    margin-top: 1rem;
+  }
+
+  .prose h2 {
+    color: var(--color-ink);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 2rem;
+  }
+
+  .prose h3 {
+    color: var(--color-ink);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+  }
+
+  .prose a {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .prose a:hover {
+    color: var(--color-accent-hover);
+  }
+
+  .prose strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .prose ul,
+  .prose ol {
+    padding-left: 1.25rem;
+  }
+
+  .prose ul {
+    list-style: disc;
+  }
+
+  .prose ol {
+    list-style: decimal;
+  }
+
+  .prose li + li {
+    margin-top: 0.375rem;
+  }
+
+  .prose code {
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--color-ink);
+  }
+
+  .prose pre {
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: 0.875rem 1rem;
+    overflow-x: auto;
+    font-size: 0.85em;
+  }
+
+  .prose pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .prose blockquote {
+    border-left: 3px solid var(--color-border-strong);
+    padding-left: 1rem;
+    color: var(--color-ink-muted);
+  }
+
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+  }
+
+  .prose th,
+  .prose td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+
+  .prose th {
+    background-color: var(--color-surface-muted);
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+}
