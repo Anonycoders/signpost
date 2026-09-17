@@ -12,7 +12,7 @@ Signpost gives every team one file per effort. They edit it when the plan change
 
 ## What it looks like
 
-**Roadmap** — every effort as a lane across the next six quarters, filterable by team, stage and category.
+**Roadmap** — every effort as a lane across six quarters, filterable by team, stage and category.
 
 | Light | Dark |
 | --- | --- |
@@ -122,7 +122,7 @@ scripts/
   CODEOWNERS                   which team reviews which directory
 ```
 
-Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com). No client-side framework; the filters are a few dozen lines of vanilla JavaScript, and every page works without it.
+Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com). No client-side framework: the filters are under a hundred lines of vanilla JavaScript over server-rendered cards, and every page still renders its content without them.
 
 ---
 
