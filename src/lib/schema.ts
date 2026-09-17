@@ -1,0 +1,152 @@
+import { z } from 'zod';
+import { siteConfig } from '../../site.config';
+
+/**
+ * Content schemas.
+ *
+ * Shared deliberately: Astro validates collections with these at build time,
+ * and `scripts/validate-content.ts` reuses them so a contributor gets the same
+ * answer from CI as from their editor. Changing a rule here changes it once.
+ */
+
+const stageIds = siteConfig.lifecycle.map((stage) => stage.id);
+const categoryIds = siteConfig.categories.map((category) => category.id);
+const impactIds = siteConfig.impactLevels.map((impact) => impact.id);
+
+function enumOf(values: string[], hint: string) {
+  return z.enum(values as [string, ...string[]], {
+    error: `${hint} Must be one of: ${values.join(', ')}.`,
+  });
+}
+
+/** Parse YYYY-MM-DD strictly, rejecting impossible days like 2026-02-30. */
+function parseIsoDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+
+  const [, year, month, day] = match.map(Number) as [number, number, number, number];
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  const roundTrips =
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+
+  return roundTrips ? date : null;
+}
+
+/**
+ * A calendar date.
+ *
+ * YAML turns an unquoted `2026-01-15` into a Date already, so both forms are
+ * accepted. Everything is normalised to UTC midnight; dates are formatted in
+ * UTC throughout the site so a reader in any timezone sees the day the author
+ * wrote, not one shifted by their offset.
+ */
+export const dateSchema = z.union([z.date(), z.string()]).transform((value, ctx) => {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      ctx.addIssue({ code: 'custom', message: 'is not a real calendar date' });
+      return z.NEVER;
+    }
+    return value;
+  }
+
+  const parsed = parseIsoDate(value);
+  if (!parsed) {
+    ctx.addIssue({
+      code: 'custom',
+      message: `"${value}" is not a real date. Write dates as YYYY-MM-DD, for example 2026-03-01.`,
+    });
+    return z.NEVER;
+  }
+  return parsed;
+});
+
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const linkSchema = z.object({
+  label: z.string().min(1, { error: 'A link needs a label.' }),
+  url: z.url({ error: 'A link needs a full URL, starting with http:// or https://.' }),
+});
+
+export const ownerSchema = z.object({
+  name: z.string().min(1, { error: 'An owner needs a name.' }),
+  /** Username on your GitHub or GitHub Enterprise instance. */
+  github: z
+    .string()
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/, {
+      error: 'A github handle is the username only, without the @ or a URL.',
+    })
+    .optional(),
+  email: z.email({ error: 'That does not look like an email address.' }).optional(),
+});
+
+export const teamSchema = z.object({
+  name: z.string().min(1, { error: 'A team needs a name.' }),
+  mission: z
+    .string()
+    .min(10, { error: 'Write a sentence saying what this team owns.' })
+    .max(300, { error: 'Keep the mission to a sentence or two (300 characters).' }),
+  /** Where to reach the team: a chat channel, mailing list or similar. */
+  channel: z.string().optional(),
+  links: z.array(linkSchema).optional(),
+});
+
+export const updateSchema = z.object({
+  date: dateSchema,
+  /** The stage the streamline was in when this happened. Defaults to the current status. */
+  status: enumOf(stageIds, 'Unknown status on an update.').optional(),
+  impact: enumOf(impactIds, 'Every update needs an impact level.'),
+  title: z
+    .string()
+    .min(1, { error: 'An update needs a title.' })
+    .max(120, { error: 'Keep update titles under 120 characters — put detail in the body.' }),
+  /** Markdown. Explain what a reader has to do, and by when. */
+  body: z.string().optional(),
+});
+
+export const streamlineSchema = z.object({
+  title: z
+    .string()
+    .min(1, { error: 'A streamline needs a title.' })
+    .max(80, { error: 'Keep titles under 80 characters so they fit on a card.' }),
+  /** Slug of the owning team, matching a file in content/teams/. */
+  team: z.string().regex(slugPattern, {
+    error: 'team must be a team slug in lowercase-with-dashes, matching a file in content/teams/.',
+  }),
+  category: enumOf(categoryIds, 'Unknown category.'),
+  status: enumOf(stageIds, 'Unknown status.'),
+  summary: z
+    .string()
+    .min(10, { error: 'Write a sentence explaining what this is and who it affects.' })
+    .max(220, { error: 'Keep the summary under 220 characters — it has to fit on a card.' }),
+  owners: z
+    .array(ownerSchema)
+    .min(1, { error: 'Every streamline needs at least one owner.' }),
+  /**
+   * Stage -> date. Past dates are what happened, future dates are the plan.
+   * Stages may be skipped; unknown stage names are rejected.
+   */
+  timeline: z.strictObject(
+    Object.fromEntries(stageIds.map((id) => [id, dateSchema.optional()])) as Record<
+      string,
+      z.ZodOptional<typeof dateSchema>
+    >,
+  ),
+  /** `team-slug/streamline-slug` of the streamline this one replaces. */
+  supersedes: z
+    .string()
+    .regex(/^[a-z0-9-]+\/[a-z0-9-]+$/, {
+      error: 'supersedes must look like team-slug/streamline-slug.',
+    })
+    .optional(),
+  links: z.array(linkSchema).optional(),
+  updates: z.array(updateSchema).default([]),
+});
+
+export type TeamData = z.infer<typeof teamSchema>;
+export type StreamlineData = z.infer<typeof streamlineSchema>;
+export type UpdateData = z.infer<typeof updateSchema>;
+export type OwnerData = z.infer<typeof ownerSchema>;
+export type LinkData = z.infer<typeof linkSchema>;

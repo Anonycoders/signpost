@@ -30,8 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Runs first: a content mistake should be reported as a content mistake,
+      # before a type error or a build failure buries it.
+      - name: Validate content
+        run: npm run validate
+
       - name: Type-check
         run: npm run check
+
+      - name: Test
+        run: npm run test
 
       - name: Build site
         run: npm run build

@@ -1,0 +1,8 @@
+name: AI Platform
+mission: >-
+  Provides the shared way to build with models here — access, evaluation,
+  guardrails and cost control — so product teams do not each solve it alone.
+channel: "#ai-platform"
+links:
+  - label: Model access policy
+    url: https://github.com/example-org/ai-platform-docs/blob/main/access.md
