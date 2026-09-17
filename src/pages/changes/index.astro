@@ -1,8 +1,19 @@
 ---
+import { siteConfig } from '@config';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
+import ChangeRow from '@/components/ChangeRow.astro';
 import EmptyState from '@/components/EmptyState.astro';
+import { getStreamlines } from '@/lib/content';
+import { buildChangeFeed } from '@/lib/changes';
+import { today } from '@/lib/date';
+
+const streamlines = await getStreamlines();
+const now = today();
+const feed = buildChangeFeed(streamlines, now, siteConfig.recentWindowDays);
+
+const upcomingCount = feed.upcoming.reduce((count, group) => count + group.items.length, 0);
 ---
 
 <BaseLayout
@@ -13,9 +24,61 @@ import EmptyState from '@/components/EmptyState.astro';
     title="Upcoming changes"
     lede="Everything the platform teams are about to change, in date order. Start here if you want to know what will break, what needs action from you, and by when."
   />
+
   <Container>
-    <div class="py-10">
-      <EmptyState title="The changes feed is built in milestone 3." />
+    <div class="py-8">
+      <section aria-labelledby="upcoming-heading">
+        <h2
+          id="upcoming-heading"
+          class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+        >
+          Still to come
+        </h2>
+
+        {
+          upcomingCount === 0 ? (
+            <div class="mt-4">
+              <EmptyState
+                title="Nothing scheduled."
+                description="No team has a dated change ahead of them right now. Anything that lands will show up here."
+              />
+            </div>
+          ) : (
+            feed.upcoming.map((group) => (
+              <div class="mt-8 first:mt-4">
+                <h3 class="text-base font-semibold text-ink">{group.label}</h3>
+                <ol class="mt-3 space-y-3">
+                  {group.items.map((item) => (
+                    <ChangeRow item={item} />
+                  ))}
+                </ol>
+              </div>
+            ))
+          )
+        }
+      </section>
+
+      {
+        feed.recent.length > 0 && (
+          <section class="mt-14 border-t border-border pt-10" aria-labelledby="recent-heading">
+            <h2
+              id="recent-heading"
+              class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+            >
+              Recently changed
+            </h2>
+            <p class="mt-1.5 text-sm text-ink-secondary">
+              The last {siteConfig.recentWindowDays} days, in case you were away.
+            </p>
+
+            <ol class="mt-4 space-y-3">
+              {feed.recent.map((item) => (
+                <ChangeRow item={item} level={3} />
+              ))}
+            </ol>
+          </section>
+        )
+      }
     </div>
   </Container>
 </BaseLayout>

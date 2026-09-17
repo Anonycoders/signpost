@@ -1,0 +1,119 @@
+---
+import { siteConfig } from '@config';
+import type { ChangeItem } from '@/lib/changes';
+import { formatDateShort, isoDate, relativeDays } from '@/lib/date';
+import { toneSurfaceClass } from '@/lib/tone';
+import Badge from './Badge.astro';
+import Markdown from './Markdown.astro';
+
+/**
+ * One entry in the changes feed: either an update a team wrote, or a streamline
+ * crossing into a new lifecycle stage on a planned date.
+ *
+ * The two are rendered as one kind of row on purpose. Someone scanning for what
+ * lands on them next month cares about the date and the consequence, not about
+ * which part of a content file the fact came from.
+ */
+interface Props {
+  item: ChangeItem;
+  /** Depth of the row's heading, so it sits correctly under whatever encloses it. */
+  level?: 3 | 4;
+}
+
+const { item, level = 4 } = Astro.props;
+const Heading = `h${level}` as const;
+
+// Config-driven rather than a check for `id === 'breaking'`: an organization
+// that renames or re-ranks its impact levels should not have to edit templates.
+const topWeight = Math.max(...siteConfig.impactLevels.map((level) => level.weight));
+const dominant = item.kind === 'update' && item.update.impact.weight >= topWeight;
+
+// When a team announced a change ahead of time, the row is filed under the day
+// it lands — so say when it was announced, or a reader wonders why they are
+// only hearing about it now.
+const announced =
+  item.kind === 'update' && item.update.effective ? item.update.date : undefined;
+---
+
+<li
+  class:list={[
+    'rounded-card border p-4 sm:flex sm:gap-5',
+    dominant
+      ? // The whole row is tinted, not just its badge. A breaking change has to
+        // be impossible to skip while scrolling.
+        `${toneSurfaceClass[item.update.impact.tone]} border-l-4`
+      : 'border-border bg-surface',
+  ]}
+>
+  <div class="sm:w-32 sm:shrink-0">
+    <time datetime={isoDate(item.date)} class="block text-sm font-medium text-ink">
+      {formatDateShort(item.date)}
+    </time>
+    <span class="text-xs text-ink-muted">{relativeDays(item.date)}</span>
+    {
+      announced && (
+        <span class="mt-1.5 block text-xs leading-tight text-ink-muted">
+          announced<br />
+          <time datetime={isoDate(announced)}>{formatDateShort(announced)}</time>
+        </span>
+      )
+    }
+  </div>
+
+  <div class="mt-2 min-w-0 flex-1 sm:mt-0">
+    <div class="flex flex-wrap items-center gap-1.5">
+      {
+        item.kind === 'update' ? (
+          <Badge tone={item.update.impact.tone} title={item.update.impact.description}>
+            {item.update.impact.label}
+          </Badge>
+        ) : (
+          <Badge tone={item.stage.tone} dot title={item.stage.description}>
+            Moves to {item.stage.label}
+          </Badge>
+        )
+      }
+      <span class="text-xs text-ink-muted">
+        <a href={item.streamline.team.href} class="hover:text-ink-secondary">
+          {item.streamline.team.name}
+        </a>
+      </span>
+    </div>
+
+    <Heading
+      class:list={[
+        'mt-2 leading-snug text-ink',
+        dominant ? 'font-semibold' : 'text-[0.9375rem] font-medium',
+      ]}
+    >
+      {item.kind === 'update' ? item.update.title : item.streamline.title}
+    </Heading>
+
+    {
+      item.kind === 'update' && (
+        <p class="mt-1 text-sm text-ink-secondary">
+          <a href={item.streamline.href} class="font-medium hover:text-ink">
+            {item.streamline.title}
+          </a>
+        </p>
+      )
+    }
+
+    {
+      item.kind === 'update' && item.update.body && (
+        <Markdown class="prose mt-2 text-sm" content={item.update.body} />
+      )
+    }
+
+    {
+      item.kind === 'transition' && (
+        <p class="mt-1 text-sm leading-relaxed text-ink-secondary">
+          {item.stage.description}{' '}
+          <a href={item.streamline.href} class="font-medium text-ink hover:text-accent">
+            See the timeline
+          </a>
+        </p>
+      )
+    }
+  </div>
+</li>

@@ -2,7 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
-import CatalogFilters from '@/components/CatalogFilters.astro';
+import Filters from '@/components/Filters.astro';
 import StreamlineCard from '@/components/StreamlineCard.astro';
 import EmptyState from '@/components/EmptyState.astro';
 import { getStreamlines, getTeams } from '@/lib/content';
@@ -27,7 +27,7 @@ const ordered = [...streamlines].sort((a, b) => {
 
   <Container>
     <div class="py-8">
-      <CatalogFilters teams={teams} total={ordered.length} />
+      <Filters teams={teams} total={ordered.length} />
 
       {
         ordered.length === 0 ? (
@@ -54,7 +54,7 @@ const ordered = [...streamlines].sort((a, b) => {
               ))}
             </div>
 
-            <div id="catalog-empty" class="mt-6 hidden">
+            <div id="filter-empty" class="mt-6 hidden">
               <EmptyState
                 title="No streamlines match those filters."
                 description="Try clearing one of them, or searching for something broader."

@@ -1,8 +1,40 @@
 ---
+import { siteConfig } from '@config';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
+import Filters from '@/components/Filters.astro';
+import RoadmapLane from '@/components/RoadmapLane.astro';
 import EmptyState from '@/components/EmptyState.astro';
+import { getStreamlines, getTeams } from '@/lib/content';
+import { buildLane, buildWindow } from '@/lib/roadmap';
+import { formatDate, today } from '@/lib/date';
+import { toneSolidClass } from '@/lib/tone';
+
+const [streamlines, teams] = await Promise.all([getStreamlines(), getTeams()]);
+
+const now = today();
+const window = buildWindow(now, siteConfig.roadmapQuarters.past, siteConfig.roadmapQuarters.future);
+
+/**
+ * Grouped by team, because the first question a reader brings to a roadmap is
+ * usually "what is DevOps doing to me this quarter", not "what happens in
+ * November". Teams with nothing to show are dropped entirely.
+ */
+const groups = teams
+  .map((team) => ({
+    team,
+    lanes: streamlines
+      .filter((streamline) => streamline.team.slug === team.slug)
+      .sort((a, b) => {
+        if (a.isTerminal !== b.isTerminal) return a.isTerminal ? 1 : -1;
+        return a.title.localeCompare(b.title);
+      })
+      .map((streamline) => ({ streamline, lane: buildLane(streamline, window, now) })),
+  }))
+  .filter((group) => group.lanes.length > 0);
+
+const total = groups.reduce((count, group) => count + group.lanes.length, 0);
 ---
 
 <BaseLayout
@@ -11,12 +43,143 @@ import EmptyState from '@/components/EmptyState.astro';
 >
   <PageHeader
     title="Roadmap"
-    lede="Every platform streamline on one timeline, grouped by team. Bars show the lifecycle stages each effort moves through; markers show what is still planned."
+    lede="Every platform streamline on one timeline, grouped by team. Bars show the lifecycle stages each effort moves through; hatched bars and diamonds are still planned."
     width="wide"
   />
+
   <Container width="wide">
-    <div class="py-10">
-      <EmptyState title="The roadmap timeline is built in milestone 3." />
+    <div class="py-8">
+      <Filters teams={teams} total={total} showSearch={false} />
+
+      {/* Colour is doing real work on this page, so it gets a key. */}
+      <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-secondary">
+        {
+          siteConfig.lifecycle.map((stage) => (
+            <span class="inline-flex items-center gap-1.5" title={stage.description}>
+              <span class={`h-2 w-4 rounded-full ${toneSolidClass[stage.tone]}`} aria-hidden="true" />
+              {stage.label}
+            </span>
+          ))
+        }
+        <span class="inline-flex items-center gap-1.5">
+          <span class="legend-planned h-2 w-4 rounded-full bg-ink-muted" aria-hidden="true"></span>
+          Planned
+        </span>
+        {
+          window.todayPct !== null && (
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-3 w-px bg-accent" aria-hidden="true" />
+              Today, {formatDate(now)}
+            </span>
+          )
+        }
+      </div>
+
+      {
+        total === 0 ? (
+          <div class="mt-6">
+            <EmptyState
+              title="Nothing on the roadmap yet."
+              description="Add a file under content/streamlines/ with dates in its timeline to put your team's work here."
+            />
+          </div>
+        ) : (
+          <section class="mt-6" aria-labelledby="roadmap-heading">
+            <h2 id="roadmap-heading" class="sr-only">
+              Timeline
+            </h2>
+
+            {/*
+              The track needs a minimum width to stay legible, so on a phone the
+              whole grid scrolls sideways under sticky streamline names rather
+              than squeezing six quarters into 320 pixels.
+            */}
+            <div
+              class="overflow-x-auto rounded-card border border-border bg-canvas"
+              data-hide-when-empty
+            >
+              <div class="min-w-[52rem]">
+                <div class="flex items-end border-b border-border px-4 pt-3 pb-2">
+                  <div class="sticky left-0 z-10 w-56 shrink-0 bg-canvas pr-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    Streamline
+                  </div>
+                  <div class="relative h-4 min-w-0 flex-1">
+                    {window.quarters.map((quarter) => (
+                      <div
+                        class:list={[
+                          'absolute inset-y-0 pl-2 text-xs',
+                          quarter.isCurrent ? 'font-semibold text-ink' : 'text-ink-secondary',
+                        ]}
+                        style={`left:${quarter.startPct}%;width:${quarter.widthPct}%`}
+                      >
+                        {quarter.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="relative px-4">
+                  {/*
+                    One overlay behind every lane, so the quarter boundaries and
+                    the today line run unbroken down the whole grid instead of
+                    restarting in each row.
+                  */}
+                  <div
+                    class="pointer-events-none absolute inset-y-0 right-4 left-60 z-0"
+                    aria-hidden="true"
+                  >
+                    {window.quarters.slice(1).map((quarter) => (
+                      <div
+                        class="absolute inset-y-0 w-px bg-border"
+                        style={`left:${quarter.startPct}%`}
+                      />
+                    ))}
+                    {window.todayPct !== null && (
+                      <div
+                        class="absolute inset-y-0 w-px bg-accent"
+                        style={`left:${window.todayPct}%`}
+                      />
+                    )}
+                  </div>
+
+                  {groups.map((group) => (
+                    <div class="relative z-0" data-group>
+                      <h3 class="sticky left-0 z-10 w-fit bg-canvas pt-5 pb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <a href={group.team.href} class="hover:text-ink">
+                          {group.team.name}
+                        </a>
+                      </h3>
+                      {group.lanes.map(({ streamline, lane }) => (
+                        <RoadmapLane streamline={streamline} lane={lane} />
+                      ))}
+                    </div>
+                  ))}
+
+                  <div class="h-4"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="filter-empty" class="mt-6 hidden">
+              <EmptyState
+                title="No streamlines match those filters."
+                description="Try clearing one of them to see the rest of the roadmap."
+              />
+            </div>
+          </section>
+        )
+      }
     </div>
   </Container>
 </BaseLayout>
+
+<style>
+  /* Same hatching as a planned bar, so the key looks like the thing it explains. */
+  .legend-planned {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      rgb(255 255 255 / 0.5) 3px 6px
+    );
+  }
+</style>

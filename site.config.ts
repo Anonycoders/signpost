@@ -92,6 +92,19 @@ export interface SiteConfig {
   impactLevels: ImpactLevel[];
   /** How far ahead the "Needs your attention" strip looks, in days. */
   attentionWindowDays: number;
+  /**
+   * Minimum impact weight for something to count as needing attention.
+   * Used by the home page strip and by streamline cards, which surface their
+   * latest update only when it clears this bar. Raise it to make the site
+   * quieter; with the default impact levels, 30 means breaking changes only.
+   */
+  attentionWeight: number;
+  /**
+   * How far back the "Recently changed" section of the changes page looks, in
+   * days. Long enough that someone returning from leave sees what they missed;
+   * short enough that the page stays about what is happening now.
+   */
+  recentWindowDays: number;
   /** Number of quarters shown on the roadmap, counted from the current quarter. */
   roadmapQuarters: {
     past: number;
@@ -197,6 +210,8 @@ export const siteConfig: SiteConfig = {
   ],
 
   attentionWindowDays: 60,
+  attentionWeight: 20,
+  recentWindowDays: 30,
 
   roadmapQuarters: {
     past: 1,

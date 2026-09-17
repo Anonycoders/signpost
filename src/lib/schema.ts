@@ -94,7 +94,18 @@ export const teamSchema = z.object({
 });
 
 export const updateSchema = z.object({
+  /** The day this was written. Updates appear on the streamline page in this order. */
   date: dateSchema,
+  /**
+   * The day the change actually lands, when that is not the day it was
+   * announced. A deprecation posted in September that takes effect in November
+   * is `date: 2026-09-10` and `effective: 2026-11-02`.
+   *
+   * The changes page files an update under this date, so a warning stays in
+   * "Still to come" until the thing it warns about has happened, rather than
+   * sliding into the past the week after it was posted.
+   */
+  effective: dateSchema.optional(),
   /** The stage the streamline was in when this happened. Defaults to the current status. */
   status: enumOf(stageIds, 'Unknown status on an update.').optional(),
   impact: enumOf(impactIds, 'Every update needs an impact level.'),

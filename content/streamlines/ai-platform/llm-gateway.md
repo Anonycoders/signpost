@@ -24,6 +24,7 @@ links:
 updates:
   - date: 2026-09-16
     status: rolling-out
+    effective: 2026-11-02
     impact: breaking
     title: Direct provider API keys stop working on 2 November
     body: |

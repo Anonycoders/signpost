@@ -3,6 +3,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import { siteConfig, type Category, type ImpactLevel, type LifecycleStage } from '@config';
 import type { LinkData, OwnerData, StreamlineData, TeamData } from './schema';
 import { getCategory, getImpact, getStage, isTerminalStage } from './taxonomy';
+import { stageOn } from './timeline';
 import { url } from './url';
 
 /**
@@ -25,6 +26,8 @@ export interface Team {
 
 export interface Update {
   date: Date;
+  /** When the change lands, if that is not the day it was written. */
+  effective?: Date;
   impact: ImpactLevel;
   stage: LifecycleStage;
   title: string;
@@ -116,6 +119,10 @@ async function load() {
     const [teamSlug = '', slug = ''] = entry.id.split('/');
     const timelineData = data.timeline as Record<string, Date | undefined>;
 
+    const timeline = siteConfig.lifecycle
+      .filter((stage) => timelineData[stage.id] instanceof Date)
+      .map((stage) => ({ stage, date: timelineData[stage.id] as Date }));
+
     const streamline: Streamline = {
       id: entry.id,
       slug,
@@ -126,9 +133,7 @@ async function load() {
       category: getCategory(data.category),
       owners: data.owners,
       links: data.links ?? [],
-      timeline: siteConfig.lifecycle
-        .filter((stage) => timelineData[stage.id] instanceof Date)
-        .map((stage) => ({ stage, date: timelineData[stage.id] as Date })),
+      timeline,
       updates: [],
       isTerminal: isTerminalStage(data.status),
       href: url(`/streamlines/${entry.id}`),
@@ -143,8 +148,18 @@ async function load() {
       .sort((a, b) => b.date.getTime() - a.date.getTime())
       .map((update) => ({
         date: update.date,
+        effective: update.effective,
         impact: getImpact(update.impact),
-        stage: getStage(update.status ?? data.status),
+        /*
+         * An update is labelled with the stage the streamline was actually in
+         * on the day it was written, worked out from the timeline. Falling
+         * back to the current status would relabel years of history every time
+         * a streamline advanced a stage. An explicit `status:` still wins, so
+         * an author can correct a case the dates get wrong.
+         */
+        stage: update.status
+          ? getStage(update.status)
+          : (stageOn(timeline, update.date) ?? timeline[0]?.stage ?? getStage(data.status)),
         title: update.title,
         body: update.body,
         streamline,

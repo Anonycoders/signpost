@@ -24,6 +24,7 @@ links:
 updates:
   - date: 2026-09-10
     status: rolling-out
+    effective: 2026-10-01
     impact: breaking
     title: Production clusters upgrade from 1 October — Ingress v1beta1 is removed
     body: |

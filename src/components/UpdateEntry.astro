@@ -30,6 +30,16 @@ const { update, showStreamline = false, showTeam = true } = Astro.props;
     <time datetime={isoDate(update.date)} class="text-xs text-ink-muted">
       {formatDate(update.date)} · {relativeDays(update.date)}
     </time>
+    {
+      /* The day it lands, when that is not the day it was written — the thing a
+         reader has to put in their calendar. */
+      update.effective && (
+        <span class="text-xs font-medium text-ink-secondary">
+          takes effect{' '}
+          <time datetime={isoDate(update.effective)}>{formatDate(update.effective)}</time>
+        </span>
+      )
+    }
   </div>
 
   {

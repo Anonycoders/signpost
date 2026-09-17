@@ -1,0 +1,120 @@
+---
+import type { Streamline } from '@/lib/content';
+import type { Lane } from '@/lib/roadmap';
+import { formatDateShort } from '@/lib/date';
+import { toneSolidClass } from '@/lib/tone';
+
+/**
+ * One streamline's row on the roadmap: a label and a track of stage bars.
+ *
+ * All geometry arrives pre-computed as percentages from `buildLane`, so this
+ * component only paints. Nothing here measures anything, which is why the
+ * timeline renders identically with JavaScript switched off.
+ */
+interface Props {
+  streamline: Streamline;
+  lane: Lane;
+}
+
+const { streamline, lane } = Astro.props;
+
+// The bars carry meaning through colour and position, neither of which a screen
+// reader can convey. This sentence says the same thing in words.
+const spoken = lane.segments
+  .map(
+    (segment) =>
+      `${segment.stage.label} from ${formatDateShort(segment.start)}${segment.planned ? ' (planned)' : ''}`,
+  )
+  .join('; ');
+
+const searchText = [
+  streamline.title,
+  streamline.summary,
+  streamline.team.name,
+  streamline.category.label,
+  streamline.stage.label,
+  ...streamline.owners.map((owner) => owner.name),
+]
+  .join(' ')
+  .toLowerCase();
+---
+
+<div
+  class:list={[
+    'flex items-stretch border-t border-border/70',
+    // Retired work stays on the roadmap as a record, but recedes so the eye
+    // lands on what is still moving.
+    streamline.isTerminal && 'opacity-55',
+  ]}
+  data-streamline
+  data-team={streamline.team.slug}
+  data-category={streamline.category.id}
+  data-status={streamline.stage.id}
+  data-search={searchText}
+>
+  {/* Sticky so the name stays readable while the track is scrolled sideways on a phone. */}
+  <div class="sticky left-0 z-10 w-56 shrink-0 bg-canvas py-2.5 pr-4">
+    <a
+      href={streamline.href}
+      class="line-clamp-2 text-[0.8125rem] font-medium leading-snug text-ink hover:text-accent"
+      title={streamline.title}
+    >
+      {streamline.title}
+    </a>
+  </div>
+
+  <div class="relative min-w-0 flex-1 py-2.5">
+    {
+      lane.hasContent ? (
+        <>
+          <span class="sr-only">{spoken}</span>
+
+          {lane.segments.map((segment) => (
+            <div
+              class:list={[
+                'absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full',
+                toneSolidClass[segment.stage.tone],
+                segment.planned && 'lane-planned',
+                // A stage that runs off the right edge squares off there, so it
+                // reads as "continues" rather than "ends neatly at the edge".
+                segment.continues && 'rounded-r-none',
+              ]}
+              style={`left:${segment.startPct}%;width:${segment.widthPct}%`}
+              title={`${segment.stage.label}: from ${formatDateShort(segment.start)}${segment.planned ? ' (planned)' : ''}`}
+              aria-hidden="true"
+            />
+          ))}
+
+          {lane.markers.map((marker) => (
+            <div
+              class:list={[
+                'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 ring-2 ring-surface',
+                toneSolidClass[marker.stage.tone],
+              ]}
+              style={`left:${marker.pct}%`}
+              title={`${marker.stage.label} planned for ${formatDateShort(marker.date)}`}
+              aria-hidden="true"
+            />
+          ))}
+        </>
+      ) : (
+        <p class="py-0.5 text-xs text-ink-muted">No dates in this window</p>
+      )
+    }
+  </div>
+</div>
+
+<style>
+  /*
+   * Planned stages are hatched rather than merely faded: a texture survives
+   * greyscale printing and colour-blind vision, where a lighter shade of the
+   * same hue does not.
+   */
+  .lane-planned {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      rgb(255 255 255 / 0.5) 3px 6px
+    );
+  }
+</style>

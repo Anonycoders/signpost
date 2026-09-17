@@ -1,4 +1,5 @@
 ---
+import { siteConfig } from '@config';
 import type { Streamline } from '@/lib/content';
 import { formatDateShort, isoDate } from '@/lib/date';
 import Badge from './Badge.astro';
@@ -12,6 +13,10 @@ interface Props {
 const { streamline, showTeam = true } = Astro.props;
 
 const latest = streamline.updates[0];
+
+// Same bar the home page's "Needs your attention" strip uses, so a card and
+// that strip can never disagree about what counts as worth interrupting for.
+const needsAttention = latest !== undefined && latest.impact.weight >= siteConfig.attentionWeight;
 
 /**
  * Data attributes drive the catalog's client-side filtering. Keeping the
@@ -67,7 +72,7 @@ const searchText = [
   </div>
 
   {
-    latest && latest.impact.weight >= 20 && (
+    needsAttention && latest && (
       <div class="mt-3 border-t border-border pt-3">
         <div class="flex items-start gap-2">
           <Badge tone={latest.impact.tone} title={latest.impact.description}>
