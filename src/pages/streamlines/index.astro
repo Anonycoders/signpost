@@ -38,7 +38,16 @@ const ordered = [...streamlines].sort((a, b) => {
             />
           </div>
         ) : (
-          <>
+          <section aria-labelledby="results-heading">
+            {/*
+              Not decoration: it gives the cards a heading to sit under (they are
+              h3, as they are on team pages) and gives anyone navigating by
+              heading a way past the filter form.
+            */}
+            <h2 id="results-heading" class="sr-only">
+              Results
+            </h2>
+
             <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {ordered.map((streamline) => (
                 <StreamlineCard streamline={streamline} />
@@ -51,7 +60,7 @@ const ordered = [...streamlines].sort((a, b) => {
                 description="Try clearing one of them, or searching for something broader."
               />
             </div>
-          </>
+          </section>
         )
       }
     </div>
