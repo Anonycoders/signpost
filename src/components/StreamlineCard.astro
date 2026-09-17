@@ -1,0 +1,83 @@
+---
+import type { Streamline } from '@/lib/content';
+import { formatDateShort, isoDate } from '@/lib/date';
+import Badge from './Badge.astro';
+
+interface Props {
+  streamline: Streamline;
+  /** Hide the team chip on a page that is already scoped to one team. */
+  showTeam?: boolean;
+}
+
+const { streamline, showTeam = true } = Astro.props;
+
+const latest = streamline.updates[0];
+
+/**
+ * Data attributes drive the catalog's client-side filtering. Keeping the
+ * searchable text on the element means the filter never has to fetch anything.
+ */
+const searchText = [
+  streamline.title,
+  streamline.summary,
+  streamline.team.name,
+  streamline.category.label,
+  streamline.stage.label,
+  ...streamline.owners.map((owner) => owner.name),
+]
+  .join(' ')
+  .toLowerCase();
+---
+
+<article
+  class="group relative flex flex-col rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong"
+  data-streamline
+  data-team={streamline.team.slug}
+  data-category={streamline.category.id}
+  data-status={streamline.stage.id}
+  data-search={searchText}
+>
+  <div class="flex flex-wrap items-center gap-1.5">
+    <Badge tone={streamline.stage.tone} dot title={streamline.stage.description}>
+      {streamline.stage.label}
+    </Badge>
+    <Badge tone={streamline.category.tone}>{streamline.category.label}</Badge>
+  </div>
+
+  <h3 class="mt-3 text-[0.9375rem] font-semibold leading-snug text-ink">
+    <a href={streamline.href} class="after:absolute after:inset-0">
+      {streamline.title}
+    </a>
+  </h3>
+
+  <p class="mt-1.5 flex-1 text-sm leading-relaxed text-ink-secondary">
+    {streamline.summary}
+  </p>
+
+  <div class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+    {showTeam && <span class="font-medium text-ink-secondary">{streamline.team.name}</span>}
+    {showTeam && latest && <span aria-hidden="true">·</span>}
+    {
+      latest && (
+        <span>
+          Updated <time datetime={isoDate(latest.date)}>{formatDateShort(latest.date)}</time>
+        </span>
+      )
+    }
+  </div>
+
+  {
+    latest && latest.impact.weight >= 20 && (
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-start gap-2">
+          <Badge tone={latest.impact.tone} title={latest.impact.description}>
+            {latest.impact.label}
+          </Badge>
+          <p class="min-w-0 flex-1 text-xs leading-relaxed text-ink-secondary">
+            {latest.title}
+          </p>
+        </div>
+      </div>
+    )
+  }
+</article>

@@ -2,7 +2,18 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
+import CatalogFilters from '@/components/CatalogFilters.astro';
+import StreamlineCard from '@/components/StreamlineCard.astro';
 import EmptyState from '@/components/EmptyState.astro';
+import { getStreamlines, getTeams } from '@/lib/content';
+
+const [streamlines, teams] = await Promise.all([getStreamlines(), getTeams()]);
+
+// Active work first; retired things stay on the site but drop to the bottom.
+const ordered = [...streamlines].sort((a, b) => {
+  if (a.isTerminal !== b.isTerminal) return a.isTerminal ? 1 : -1;
+  return a.title.localeCompare(b.title);
+});
 ---
 
 <BaseLayout
@@ -11,11 +22,38 @@ import EmptyState from '@/components/EmptyState.astro';
 >
   <PageHeader
     title="Streamlines"
-    lede="Every product, initiative and migration the platform teams own. Filter by team, category or lifecycle stage to find what you need."
+    lede="Every product, initiative and migration the platform teams own. Filter by team, category or stage to find what you need."
   />
+
   <Container>
-    <div class="py-10">
-      <EmptyState title="The streamline catalog is built in milestone 2." />
+    <div class="py-8">
+      <CatalogFilters teams={teams} total={ordered.length} />
+
+      {
+        ordered.length === 0 ? (
+          <div class="mt-6">
+            <EmptyState
+              title="Nothing published yet."
+              description="Add a file under content/streamlines/ to put your team's work on this page."
+            />
+          </div>
+        ) : (
+          <>
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {ordered.map((streamline) => (
+                <StreamlineCard streamline={streamline} />
+              ))}
+            </div>
+
+            <div id="catalog-empty" class="mt-6 hidden">
+              <EmptyState
+                title="No streamlines match those filters."
+                description="Try clearing one of them, or searching for something broader."
+              />
+            </div>
+          </>
+        )
+      }
     </div>
   </Container>
 </BaseLayout>

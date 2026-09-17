@@ -3,6 +3,37 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
 import EmptyState from '@/components/EmptyState.astro';
+import Badge from '@/components/Badge.astro';
+import { getStreamlines, getTeams } from '@/lib/content';
+import { formatDateShort, isoDate } from '@/lib/date';
+import { stageIndex } from '@/lib/taxonomy';
+
+const [teams, streamlines] = await Promise.all([getTeams(), getStreamlines()]);
+
+/**
+ * Each card answers the question people actually arrive with: is this the team
+ * I need, how much are they running, and when did they last say anything.
+ */
+const cards = teams.map((team) => {
+  const owned = streamlines.filter((streamline) => streamline.team.slug === team.slug);
+  const active = owned.filter((streamline) => !streamline.isTerminal);
+  const lastUpdate = owned
+    .flatMap((streamline) => streamline.updates)
+    .reduce<Date | undefined>(
+      (latest, update) => (!latest || update.date > latest ? update.date : latest),
+      undefined,
+    );
+
+  // Which stages this team currently has work in, ordered by the lifecycle
+  // rather than by whichever streamline happened to sort first.
+  const stages = [...new Map(active.map((s) => [s.stage.id, s.stage])).values()].sort(
+    (a, b) => stageIndex(a.id) - stageIndex(b.id),
+  );
+
+  const finished = owned.length - active.length;
+
+  return { team, total: owned.length, finished, stages, lastUpdate };
+});
 ---
 
 <BaseLayout title="Teams" description="Who owns what, and where to reach them.">
@@ -10,9 +41,63 @@ import EmptyState from '@/components/EmptyState.astro';
     title="Teams"
     lede="The teams publishing here, what each of them owns, and where to reach them when you have a question."
   />
+
   <Container>
-    <div class="py-10">
-      <EmptyState title="Team pages are built in milestone 2." />
+    <div class="py-8 sm:py-10">
+      {
+        cards.length === 0 ? (
+          <EmptyState
+            title="No teams yet."
+            description="Add a file under content/teams/ to put your team on this page."
+          />
+        ) : (
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map(({ team, total, finished, stages, lastUpdate }) => (
+              <article class="group relative flex flex-col rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong">
+                <h2 class="text-[0.9375rem] font-semibold leading-snug text-ink">
+                  <a href={team.href} class="after:absolute after:inset-0">
+                    {team.name}
+                  </a>
+                </h2>
+
+                {team.channel && (
+                  <p class="mt-1 font-mono text-xs text-ink-muted">{team.channel}</p>
+                )}
+
+                <p class="mt-2.5 flex-1 text-sm leading-relaxed text-ink-secondary">
+                  {team.mission}
+                </p>
+
+                {stages.length > 0 && (
+                  <div class="mt-4 flex flex-wrap gap-1.5">
+                    {stages.map((stage) => (
+                      <Badge tone={stage.tone} dot title={stage.description}>
+                        {stage.label}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                <div class="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-xs text-ink-muted">
+                  <span>
+                    {total} streamline{total === 1 ? '' : 's'}
+                    {finished > 0 && `, ${finished} finished`}
+                  </span>
+                  {lastUpdate && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        Last update{' '}
+                        <time datetime={isoDate(lastUpdate)}>{formatDateShort(lastUpdate)}</time>
+                      </span>
+                    </>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      }
     </div>
   </Container>
 </BaseLayout>

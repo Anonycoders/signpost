@@ -1,0 +1,51 @@
+---
+import type { Update } from '@/lib/content';
+import { formatDate, isoDate, relativeDays } from '@/lib/date';
+import { toneSolidVar } from '@/lib/tone';
+import Badge from './Badge.astro';
+import Markdown from './Markdown.astro';
+
+interface Props {
+  update: Update;
+  /** Show which streamline this came from — needed on cross-streamline feeds. */
+  showStreamline?: boolean;
+  /** Off on a page already scoped to one team, where the name only repeats. */
+  showTeam?: boolean;
+}
+
+const { update, showStreamline = false, showTeam = true } = Astro.props;
+---
+
+<article class="relative pl-6">
+  <span
+    class="absolute left-0 top-[0.4375rem] size-2 rounded-full"
+    style={`background: ${toneSolidVar[update.impact.tone]}`}
+    aria-hidden="true"
+  ></span>
+
+  <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+    <Badge tone={update.impact.tone} title={update.impact.description}>
+      {update.impact.label}
+    </Badge>
+    <time datetime={isoDate(update.date)} class="text-xs text-ink-muted">
+      {formatDate(update.date)} · {relativeDays(update.date)}
+    </time>
+  </div>
+
+  {
+    showStreamline && (
+      <p class="mt-2 text-xs text-ink-muted">
+        <a href={update.streamline.href} class="font-medium text-ink-secondary hover:text-accent">
+          {update.streamline.title}
+        </a>
+        {showTeam && <span> · {update.streamline.team.name}</span>}
+      </p>
+    )
+  }
+
+  <h3 class="mt-2 text-[0.9375rem] font-semibold leading-snug text-ink">
+    {update.title}
+  </h3>
+
+  {update.body && <Markdown class="prose mt-2 text-sm" content={update.body} />}
+</article>

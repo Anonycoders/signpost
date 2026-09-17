@@ -32,6 +32,21 @@ export const toneSolidClass: Record<Tone, string> = {
   pink: 'bg-tone-pink-solid',
 };
 
+/**
+ * Tinted panel: background and border only, no text colour.
+ * For callouts, where the body has to stay in normal ink to read well at length.
+ */
+export const toneSurfaceClass: Record<Tone, string> = {
+  gray: 'bg-tone-gray-bg border-tone-gray-border',
+  blue: 'bg-tone-blue-bg border-tone-blue-border',
+  violet: 'bg-tone-violet-bg border-tone-violet-border',
+  green: 'bg-tone-green-bg border-tone-green-border',
+  amber: 'bg-tone-amber-bg border-tone-amber-border',
+  red: 'bg-tone-red-bg border-tone-red-border',
+  teal: 'bg-tone-teal-bg border-tone-teal-border',
+  pink: 'bg-tone-pink-bg border-tone-pink-border',
+};
+
 /** Text-only colour, for icons and inline emphasis. */
 export const toneTextClass: Record<Tone, string> = {
   gray: 'text-tone-gray-ink',

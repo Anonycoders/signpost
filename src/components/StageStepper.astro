@@ -1,0 +1,172 @@
+---
+import type { Streamline } from '@/lib/content';
+import { formatDate, isFuture, isoDate, relativeDays } from '@/lib/date';
+import { toneSolidVar } from '@/lib/tone';
+
+/**
+ * The lifecycle of one streamline as a stepper.
+ *
+ * Only stages with a date are shown — that is the story this streamline
+ * actually has, rather than a row of stages it skipped. Dates in the future are
+ * drawn as plans (hollow marker, dashed connector) so a reader is never left
+ * guessing which parts have happened.
+ */
+interface Props {
+  streamline: Streamline;
+}
+
+const { streamline } = Astro.props;
+
+const steps = streamline.timeline.map((entry) => ({
+  ...entry,
+  planned: isFuture(entry.date),
+  current: entry.stage.id === streamline.stage.id,
+}));
+---
+
+<ol class="stepper" aria-label="Lifecycle">
+  {
+    steps.map((step, index) => (
+      <li
+        class:list={['step', { planned: step.planned, current: step.current }]}
+        style={`--dot: ${toneSolidVar[step.stage.tone]}`}
+      >
+        {index > 0 && <span class="connector" aria-hidden="true" />}
+        <span class="marker" aria-hidden="true" />
+        <div class="label">
+          <span class="name">
+            {step.stage.label}
+            {step.current && <span class="sr-only"> (current stage)</span>}
+          </span>
+          <time datetime={isoDate(step.date)} class="date">
+            {formatDate(step.date)}
+          </time>
+          <span class="relative-date">
+            {step.planned ? `planned, ${relativeDays(step.date)}` : relativeDays(step.date)}
+          </span>
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0 0.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .step:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Vertical run between this step's marker and the one above it. */
+  .connector {
+    position: absolute;
+    left: 0.5625rem;
+    bottom: calc(100% - 0.375rem);
+    height: 1.25rem;
+    border-left: 2px solid var(--color-border-strong);
+  }
+
+  .step.planned .connector {
+    border-left-style: dashed;
+  }
+
+  /* `block` matters: in the horizontal layout below the step is a block box,
+   * and an inline span would ignore width and height entirely. */
+  .marker {
+    display: block;
+    margin-top: 0.3125rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background: var(--dot);
+    justify-self: center;
+  }
+
+  /* A planned stage is drawn hollow: it has not happened yet. */
+  .step.planned .marker {
+    background: var(--color-surface);
+    border: 2px solid var(--dot);
+  }
+
+  .step.current .marker {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot) 22%, transparent);
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.0625rem;
+    min-width: 0;
+  }
+
+  .name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .step.planned .name {
+    color: var(--color-ink-secondary);
+    font-weight: 500;
+  }
+
+  .date {
+    font-size: 0.8125rem;
+    color: var(--color-ink-secondary);
+  }
+
+  .relative-date {
+    font-size: 0.75rem;
+    color: var(--color-ink-muted);
+  }
+
+  @media (min-width: 768px) {
+    .stepper {
+      flex-direction: row;
+    }
+
+    .step {
+      flex: 1;
+      display: block;
+      padding-bottom: 0;
+      padding-right: 1rem;
+    }
+
+    /* Horizontal run, drawn to the left of each marker after the first. */
+    .connector {
+      left: auto;
+      right: calc(100% - 0.375rem);
+      bottom: auto;
+      top: 0.375rem;
+      height: 0;
+      width: calc(100% - 1.5rem);
+      border-left: none;
+      border-top: 2px solid var(--color-border-strong);
+    }
+
+    .step.planned .connector {
+      border-top-style: dashed;
+    }
+
+    .marker {
+      margin-top: 0;
+      justify-self: start;
+    }
+
+    .label {
+      margin-top: 0.625rem;
+    }
+  }
+</style>

@@ -1,0 +1,311 @@
+---
+import { render } from 'astro:content';
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import Badge from '@/components/Badge.astro';
+import Callout from '@/components/Callout.astro';
+import StageStepper from '@/components/StageStepper.astro';
+import UpdateEntry from '@/components/UpdateEntry.astro';
+import {
+  getStreamline,
+  getStreamlines,
+  getSuperseded,
+  getSupersededBy,
+  profileUrl,
+} from '@/lib/content';
+import { formatDate, isFuture, relativeDays } from '@/lib/date';
+import { url } from '@/lib/url';
+
+/**
+ * One streamline, in full.
+ *
+ * The page answers, in order: what is this, is it about to change under me,
+ * where is it in its lifecycle, why does it exist, and what has happened
+ * recently. Anything a reader needs in order to act is above the long prose.
+ */
+
+export async function getStaticPaths() {
+  const streamlines = await getStreamlines();
+  // Only the id is passed through; the page looks the streamline up from the
+  // same cached load, which keeps one construction path for the data.
+  return streamlines.map((streamline) => ({ params: { id: streamline.id } }));
+}
+
+const { id } = Astro.params;
+const streamline = await getStreamline(id ?? '');
+
+if (!streamline) {
+  throw new Error(`No streamline found for "${id}". This should be unreachable.`);
+}
+
+const [supersedes, supersededBy] = await Promise.all([
+  getSuperseded(streamline),
+  getSupersededBy(streamline),
+]);
+
+const { Content } = await render(streamline.entry);
+const hasBody = (streamline.entry.body ?? '').trim().length > 0;
+
+/**
+ * A dated terminal stage is the site's most consequential fact: this thing is
+ * going away. Found by asking the lifecycle which stages are terminal rather
+ * than by naming a stage here, so a fork can rename its stages freely.
+ */
+const terminalDate = streamline.timeline.find((entry) => entry.stage.terminal);
+const retiringOn = terminalDate && isFuture(terminalDate.date) ? terminalDate : undefined;
+const retiredOn = terminalDate && !isFuture(terminalDate.date) ? terminalDate : undefined;
+
+const nextMilestone = streamline.timeline.find((entry) => isFuture(entry.date));
+const related = [
+  supersededBy && { label: 'Replaced by', streamline: supersededBy },
+  supersedes && { label: 'Replaces', streamline: supersedes },
+].filter(Boolean) as Array<{ label: string; streamline: NonNullable<typeof supersedes> }>;
+---
+
+<BaseLayout title={streamline.title} description={streamline.summary}>
+  <div class="border-b border-border bg-surface">
+    <Container>
+      <div class="py-8 sm:py-10">
+        <nav aria-label="Breadcrumb" class="text-xs text-ink-muted">
+          <a href={url('/streamlines')} class="transition-colors hover:text-ink">Streamlines</a>
+          <span aria-hidden="true" class="px-1.5">/</span>
+          <a href={streamline.team.href} class="transition-colors hover:text-ink">
+            {streamline.team.name}
+          </a>
+        </nav>
+
+        <div class="mt-3.5 flex flex-wrap items-center gap-1.5">
+          <Badge tone={streamline.stage.tone} dot size="md" title={streamline.stage.description}>
+            {streamline.stage.label}
+          </Badge>
+          <Badge tone={streamline.category.tone} size="md">{streamline.category.label}</Badge>
+        </div>
+
+        <h1 class="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          {streamline.title}
+        </h1>
+
+        <p class="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-ink-secondary">
+          {streamline.summary}
+        </p>
+      </div>
+    </Container>
+  </div>
+
+  <Container>
+    <div class="grid gap-10 py-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-12">
+      <div class="min-w-0 space-y-9">
+        {
+          retiringOn && (
+            <Callout
+              tone="amber"
+              title={`Being switched off on ${formatDate(retiringOn.date)}`}
+            >
+              That is {relativeDays(retiringOn.date)}. Anything still depending on this needs to
+              move before then
+              {supersededBy ? (
+                <>
+                  {' — to '}
+                  <a href={supersededBy.href} class="font-medium text-accent hover:underline">
+                    {supersededBy.title}
+                  </a>
+                  .
+                </>
+              ) : (
+                '.'
+              )}
+            </Callout>
+          )
+        }
+
+        {
+          retiredOn && (
+            <Callout tone="gray" title={`Switched off on ${formatDate(retiredOn.date)}`}>
+              This page is kept as a record of what happened
+              {supersededBy ? (
+                <>
+                  {'. It was replaced by '}
+                  <a href={supersededBy.href} class="font-medium text-accent hover:underline">
+                    {supersededBy.title}
+                  </a>
+                  .
+                </>
+              ) : (
+                '.'
+              )}
+            </Callout>
+          )
+        }
+
+        <section aria-labelledby="lifecycle-heading">
+          {/*
+            Section headings are styled as eyebrows rather than as large titles.
+            The body below is author-written Markdown with its own h2s, and two
+            competing heading scales on one page reads as a mistake.
+          */}
+          <h2
+            id="lifecycle-heading"
+            class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+          >
+            Lifecycle
+          </h2>
+          <p class="mt-1.5 text-sm text-ink-secondary">
+            {
+              nextMilestone
+                ? `Next: ${nextMilestone.stage.label.toLowerCase()} on ${formatDate(nextMilestone.date)}, ${relativeDays(nextMilestone.date)}.`
+                : 'No dates planned beyond today.'
+            }
+          </p>
+
+          <div class="mt-5 rounded-card border border-border bg-surface p-5 sm:p-6">
+            {
+              streamline.timeline.length > 0 ? (
+                <StageStepper streamline={streamline} />
+              ) : (
+                <p class="text-sm text-ink-muted">No dates recorded yet.</p>
+              )
+            }
+          </div>
+        </section>
+
+        {
+          hasBody && (
+            <section aria-labelledby="detail-heading">
+              <h2 id="detail-heading" class="sr-only">
+                Detail
+              </h2>
+              <div class="prose">
+                <Content />
+              </div>
+            </section>
+          )
+        }
+
+        <section aria-labelledby="updates-heading">
+          <h2
+            id="updates-heading"
+            class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+          >
+            Updates
+          </h2>
+
+          {
+            streamline.updates.length > 0 ? (
+              <div class="mt-5 space-y-7">
+                {streamline.updates.map((update) => (
+                  <UpdateEntry update={update} />
+                ))}
+              </div>
+            ) : (
+              <p class="mt-2 text-sm text-ink-muted">
+                Nothing posted yet. Updates appear here as the owners add them.
+              </p>
+            )
+          }
+        </section>
+      </div>
+
+      <aside class="space-y-7 lg:sticky lg:top-8 lg:self-start">
+        <section>
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Owned by</h2>
+          <a
+            href={streamline.team.href}
+            class="mt-2 block text-sm font-medium text-ink transition-colors hover:text-accent"
+          >
+            {streamline.team.name}
+          </a>
+          {
+            streamline.team.channel && (
+              <p class="mt-0.5 font-mono text-xs text-ink-muted">{streamline.team.channel}</p>
+            )
+          }
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            {streamline.owners.length === 1 ? 'Owner' : 'Owners'}
+          </h2>
+          <ul class="mt-2 space-y-1.5">
+            {
+              streamline.owners.map((owner) => (
+                <li class="text-sm">
+                  {owner.github ? (
+                    <a
+                      href={profileUrl(owner.github)}
+                      class="text-ink transition-colors hover:text-accent"
+                    >
+                      {owner.name}
+                    </a>
+                  ) : owner.email ? (
+                    <a
+                      href={`mailto:${owner.email}`}
+                      class="text-ink transition-colors hover:text-accent"
+                    >
+                      {owner.name}
+                    </a>
+                  ) : (
+                    <span class="text-ink">{owner.name}</span>
+                  )}
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        {
+          streamline.links.length > 0 && (
+            <section>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Links</h2>
+              <ul class="mt-2 space-y-1.5">
+                {streamline.links.map((link) => (
+                  <li>
+                    <a
+                      href={link.url}
+                      class="text-sm text-accent transition-colors hover:text-accent-hover hover:underline"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        {
+          related.length > 0 && (
+            <section>
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">Related</h2>
+              <ul class="mt-2 space-y-2.5">
+                {related.map((item) => (
+                  <li class="text-sm">
+                    <span class="block text-xs text-ink-muted">{item.label}</span>
+                    <a
+                      href={item.streamline.href}
+                      class="text-ink transition-colors hover:text-accent"
+                    >
+                      {item.streamline.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+
+        <section class="border-t border-border pt-5">
+          <a
+            href={streamline.editUrl}
+            class="text-sm text-ink-secondary transition-colors hover:text-accent"
+          >
+            Edit this page &rarr;
+          </a>
+          <p class="mt-1 text-xs leading-relaxed text-ink-muted">
+            Anything wrong or out of date? Open a pull request — it is one file.
+          </p>
+        </section>
+      </aside>
+    </div>
+  </Container>
+</BaseLayout>

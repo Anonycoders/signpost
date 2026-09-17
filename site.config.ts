@@ -81,6 +81,12 @@ export interface SiteConfig {
     label: string;
     url: string;
   };
+  /**
+   * Locale used to format dates. Dates are always rendered in UTC, so a reader
+   * anywhere sees the day the author wrote rather than one shifted by their
+   * own timezone.
+   */
+  locale: string;
   lifecycle: LifecycleStage[];
   categories: Category[];
   impactLevels: ImpactLevel[];
@@ -109,6 +115,8 @@ export const siteConfig: SiteConfig = {
     label: '#platform-questions',
     url: 'https://github.com/example-org/signpost/issues',
   },
+
+  locale: 'en-GB',
 
   /**
    * The platform lifecycle. Order matters: it defines progression on the

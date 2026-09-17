@@ -31,11 +31,22 @@
   --color-accent-soft: #eef0fe;
   --color-accent-ink: #ffffff;
 
-  /* ---------- Tones ----------
-   * Every stage, category and impact level maps to one of these.
-   * Each has: soft background, border, readable text, and a solid fill
-   * (used for timeline bars and dots).
-   */
+  --radius-card: 0.75rem;
+  --radius-badge: 0.375rem;
+}
+
+/* ---------- Tones ----------
+ * Every stage, category and impact level maps to one of these.
+ * Each has: soft background, border, readable text, and a solid fill
+ * (used for timeline bars and dots).
+ *
+ * `static` so every tone variable is emitted whether or not a utility class
+ * happens to reference it. Components also read these directly as
+ * `var(--color-tone-*)` in inline styles, and those uses are invisible to
+ * Tailwind's scanner — without `static`, adding a tone to site.config.ts would
+ * silently render colourless.
+ */
+@theme static {
   --color-tone-gray-bg: #f1f3f5;
   --color-tone-gray-border: #dde1e6;
   --color-tone-gray-ink: #495057;
@@ -75,10 +86,6 @@
   --color-tone-pink-border: #fbcedf;
   --color-tone-pink-ink: #b32f61;
   --color-tone-pink-solid: #ec4899;
-
-  /* ---------- Shape ---------- */
-  --radius-card: 0.75rem;
-  --radius-badge: 0.375rem;
 }
 
 /* ---------- Dark theme overrides ----------

@@ -1,0 +1,27 @@
+---
+import type { Tone } from '@config';
+import { toneSurfaceClass, toneTextClass } from '@/lib/tone';
+
+/**
+ * A boxed notice for the one thing a reader has to act on: a retirement date,
+ * a replacement to move to. Used sparingly — if every page has three callouts,
+ * readers stop seeing them.
+ */
+interface Props {
+  tone?: Tone;
+  title: string;
+}
+
+const { tone = 'gray', title } = Astro.props;
+---
+
+<div class={`rounded-card border px-4 py-3.5 ${toneSurfaceClass[tone]}`}>
+  <p class={`text-sm font-semibold ${toneTextClass[tone]}`}>{title}</p>
+  {
+    Astro.slots.has('default') && (
+      <div class="mt-1 text-sm leading-relaxed text-ink-secondary">
+        <slot />
+      </div>
+    )
+  }
+</div>

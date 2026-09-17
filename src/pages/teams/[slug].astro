@@ -1,0 +1,146 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import StreamlineCard from '@/components/StreamlineCard.astro';
+import UpdateEntry from '@/components/UpdateEntry.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import { getStreamlinesForTeam, getTeam, getTeams } from '@/lib/content';
+import { url } from '@/lib/url';
+
+/**
+ * One team's page: what they own and what they have said recently.
+ *
+ * Deliberately not a second copy of the catalog — no filters, no search. A
+ * reader who lands here already knows which team they care about.
+ */
+
+export async function getStaticPaths() {
+  const teams = await getTeams();
+  return teams.map((team) => ({ params: { slug: team.slug } }));
+}
+
+const { slug } = Astro.params;
+const team = await getTeam(slug ?? '');
+
+if (!team) {
+  throw new Error(`No team found for "${slug}". This should be unreachable.`);
+}
+
+const streamlines = await getStreamlinesForTeam(team.slug);
+
+// Active work first; finished work stays on the page but drops below it.
+const active = streamlines.filter((streamline) => !streamline.isTerminal);
+const finished = streamlines.filter((streamline) => streamline.isTerminal);
+
+const RECENT_UPDATE_COUNT = 6;
+const recentUpdates = streamlines
+  .flatMap((streamline) => streamline.updates)
+  .sort((a, b) => b.date.getTime() - a.date.getTime())
+  .slice(0, RECENT_UPDATE_COUNT);
+---
+
+<BaseLayout title={team.name} description={team.mission}>
+  <div class="border-b border-border bg-surface">
+    <Container>
+      <div class="py-8 sm:py-10">
+        <nav aria-label="Breadcrumb" class="text-xs text-ink-muted">
+          <a href={url('/teams')} class="transition-colors hover:text-ink">Teams</a>
+        </nav>
+
+        <h1 class="mt-3.5 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+          {team.name}
+        </h1>
+
+        <p class="mt-2.5 max-w-3xl text-[0.9375rem] leading-relaxed text-ink-secondary">
+          {team.mission}
+        </p>
+
+        <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          {team.channel && <span class="font-mono text-ink-secondary">{team.channel}</span>}
+          {
+            team.links.map((link) => (
+              <a
+                href={link.url}
+                class="text-accent transition-colors hover:text-accent-hover hover:underline"
+              >
+                {link.label}
+              </a>
+            ))
+          }
+          <a href={team.editUrl} class="text-ink-muted transition-colors hover:text-accent">
+            Edit this team
+          </a>
+        </div>
+      </div>
+    </Container>
+  </div>
+
+  <Container>
+    <div class="space-y-12 py-8 sm:py-10">
+      <section aria-labelledby="active-heading">
+        <h2
+          id="active-heading"
+          class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+        >
+          {active.length === 0 ? 'Streamlines' : `In flight (${active.length})`}
+        </h2>
+
+        {
+          active.length > 0 ? (
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {active.map((streamline) => (
+                <StreamlineCard streamline={streamline} showTeam={false} />
+              ))}
+            </div>
+          ) : (
+            <div class="mt-5">
+              <EmptyState
+                title={`${team.name} has nothing in flight.`}
+                description="Add a file under content/streamlines/ to put this team's work on the site."
+              />
+            </div>
+          )
+        }
+      </section>
+
+      {
+        finished.length > 0 && (
+          <section aria-labelledby="finished-heading">
+            <h2
+              id="finished-heading"
+              class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+            >
+              Finished ({finished.length})
+            </h2>
+            <p class="mt-1.5 text-sm text-ink-secondary">
+              Kept as a record of what changed and when.
+            </p>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {finished.map((streamline) => (
+                <StreamlineCard streamline={streamline} showTeam={false} />
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      {
+        recentUpdates.length > 0 && (
+          <section aria-labelledby="recent-heading">
+            <h2
+              id="recent-heading"
+              class="text-xs font-semibold uppercase tracking-wide text-ink-muted"
+            >
+              Recent updates
+            </h2>
+            <div class="mt-5 max-w-2xl space-y-7">
+              {recentUpdates.map((update) => (
+                <UpdateEntry update={update} showStreamline showTeam={false} />
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+  </Container>
+</BaseLayout>
