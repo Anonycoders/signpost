@@ -1,0 +1,135 @@
+# Signpost
+
+**A static site that answers "what is the platform team doing, and what is about to change?"** — built from Markdown files in a Git repository, deployed to GitHub Pages, with no database and no server.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Platform teams ship things that land on everyone else: a cluster upgrade, a CI migration, a deprecated gateway. The work is usually visible *somewhere* — a wiki page, a Slack thread, a Jira epic nobody outside the team can read — and the result is the same either way. Other teams find out when something breaks.
+
+Signpost gives every team one file per effort. They edit it when the plan changes, open a pull request, and the site rebuilds. Anyone can see which stage each effort is in, when it lands, and who owns it — and subscribe to a feed so they do not have to check.
+
+---
+
+## What it looks like
+
+**Roadmap** — every effort as a lane across the next six quarters, filterable by team, stage and category.
+
+| Light | Dark |
+| --- | --- |
+| ![The roadmap page in the light theme](docs/screenshots/roadmap-light.png) | ![The roadmap page in the dark theme](docs/screenshots/roadmap-dark.png) |
+
+**Changes** — a reverse-chronological log of what teams have announced, with breaking changes marked and dated.
+
+| Light | Dark |
+| --- | --- |
+| ![The changes page in the light theme](docs/screenshots/changes-light.png) | ![The changes page in the dark theme](docs/screenshots/changes-dark.png) |
+
+**Home** — what landed recently and what lands soon, above everything else.
+
+![The home page in the dark theme](docs/screenshots/home-dark.png)
+
+Plus a filterable catalog of every streamline, a page per team, a page per streamline with its full timeline and update history, and an `/about/` page explaining the whole thing to a first-time visitor.
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/example-org/signpost.git
+cd signpost
+nvm use          # Node 24, per .nvmrc — the repo sets engine-strict
+npm install
+npm run dev      # http://localhost:4321
+```
+
+That runs the site with the demo content in `content/`, which is fictional and exists to show you the shape of a real instance. Delete it when you adopt this.
+
+Other scripts:
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server with hot reload |
+| `npm run validate` | Content validator — the same one CI runs |
+| `npm run check` | TypeScript and Astro diagnostics |
+| `npm run test` | Unit tests |
+| `npm run build` | Validate, then build the static site into `dist/` |
+| `npm run preview` | Serve `dist/` as it will be deployed |
+
+If `npm install` refuses to run, it is `engine-strict` doing its job: this needs Node 22.12 or newer, and `.nvmrc` pins the version the project is built against.
+
+---
+
+## Publishing your team's work
+
+One Markdown file per streamline, in `content/streamlines/<team>/<slug>.md`. Frontmatter holds the structured part — stage, owners, timeline dates, links — and `updates:` is the running log of announcements, newest first:
+
+```yaml
+updates:
+  - date: 2026-09-10       # when you posted it
+    status: rolling-out
+    effective: 2026-10-01  # when it actually lands on people
+    impact: breaking
+    title: Production clusters upgrade from 1 October — Ingress v1beta1 is removed
+    body: |
+      Production upgrades run in three waves starting **1 October**. Any workload
+      still declaring `networking.k8s.io/v1beta1` Ingress objects will fail to
+      deploy once its cluster is upgraded.
+```
+
+Edit, open a pull request, CODEOWNERS routes it to your team, CI validates it, merge deploys it. The validator blocks the mistakes that make a roadmap untrustworthy — a deprecation with no retirement date, a breaking change with no notice period, a timeline that runs backwards — and it explains what to fix rather than which schema rule failed.
+
+**[CONTRIBUTING.md](CONTRIBUTING.md)** is the five-minute version: templates to copy, every field explained, and what CI will and will not let through.
+
+---
+
+## Running it for your own organization
+
+Fork it, edit one config file, replace the content. **[docs/adopting.md](docs/adopting.md)** walks through it: naming and branding, defining your own lifecycle stages and categories, wiring CODEOWNERS to your teams, deploying to GitHub Pages (including GitHub Enterprise), and what to do if your instance has Pages turned off.
+
+Everything an organization needs to change lives in [`site.config.ts`](site.config.ts) — the stages, the categories, the impact levels, the colours, the attention windows. The rules follow the config: rename `deprecated` to `sunsetting` and the validator's messages, the filters and the roadmap legend all rename with it.
+
+---
+
+## How it works
+
+**Git is the database.** There is no CMS, no admin login, no runtime. `content/` is the source of truth; the site is a pure function of it. Reviewing a roadmap change is reviewing a diff, and the history of what a team promised is `git log`.
+
+**The build is the gatekeeper.** `scripts/content-rules.ts` holds the rules, shared between the CLI validator and the Astro build via one set of Zod schemas, so CI and your editor cannot disagree. Errors block the merge; softer things (a streamline nobody has updated in a long time) warn.
+
+**Feeds, so nobody has to remember to look.** A site-wide Atom feed at `/feed.xml` and one per team, hand-built to Atom 1.0 (RFC 4287) with stable entry IDs — so a feed reader, a Slack integration or a Teams connector can subscribe once and get every announcement.
+
+**A nightly rebuild.** "Landing in 60 days" is only true on the day it is built, so the deploy workflow also runs on a schedule. The rationale is in [docs/adopting.md](docs/adopting.md#5-deploy-to-pages).
+
+**It prints.** The roadmap and the changes log have print stylesheets, for the people who bring a roadmap to a planning meeting on paper. One known limitation: a roadmap that spans more than one printed page does not repeat the quarter headers on the second page.
+
+### Layout
+
+```
+content/
+  teams/<slug>.yaml            one file per team
+  streamlines/<team>/<slug>.md one file per effort
+site.config.ts                 everything an organization changes
+src/
+  pages/                       routes
+  lib/                         roadmap, changes, timeline, feeds — unit-tested
+  components/                  Astro components
+scripts/
+  content-rules.ts             the validation rules
+  validate-content.ts          the CLI wrapper CI runs
+.github/
+  workflows/ci.yml             validate + check + test on every PR
+  workflows/deploy.yml         build + publish to Pages on main and nightly
+  CODEOWNERS                   which team reviews which directory
+```
+
+Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com). No client-side framework; the filters are a few dozen lines of vanilla JavaScript, and every page works without it.
+
+---
+
+## Contributing to Signpost itself
+
+Bug reports, ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md#changing-the-site-itself) and the [Code of Conduct](CODE_OF_CONDUCT.md). If you have adopted this somewhere, we would genuinely like to hear what you had to change.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Fork it, rebrand it, sell services around it. No attribution required, though a link back is appreciated.

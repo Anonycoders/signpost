@@ -143,8 +143,14 @@ const stats = [
             <h2 id="attention-heading" class="text-base font-semibold text-ink">
               Needs your attention
             </h2>
+            {/*
+              The strip is bounded at both ends, and saying only "landing
+              within 60 days" leaves a reader wondering why something that
+              already happened is sitting at the top of the page.
+            */}
             <p class="text-xs text-ink-muted">
-              Landing within {siteConfig.attentionWindowDays} days
+              Landing within {siteConfig.attentionWindowDays} days, or landed in the last{' '}
+              {siteConfig.recentWindowDays}
             </p>
           </div>
 
@@ -152,7 +158,7 @@ const stats = [
             <div class="mt-4">
               <EmptyState
                 title="Nothing is about to break."
-                description={`No team has posted a change of consequence landing in the next ${siteConfig.attentionWindowDays} days.`}
+                description={`No team has posted a change of consequence that landed in the last ${siteConfig.recentWindowDays} days or is due in the next ${siteConfig.attentionWindowDays}.`}
               >
                 <a
                   href={url('/changes')}
@@ -181,26 +187,34 @@ const stats = [
       )
     }
 
-    <section class="border-t border-border py-10" aria-labelledby="landscape-heading">
-      <h2 id="landscape-heading" class="sr-only">The platform at a glance</h2>
+    {
+      /*
+       * Three zeroes under "nothing has been published yet" tell a fresh fork
+       * nothing it does not already know.
+       */
+      hasContent && (
+        <section class="border-t border-border py-10" aria-labelledby="landscape-heading">
+          <h2 id="landscape-heading" class="sr-only">
+            The platform at a glance
+          </h2>
 
-      <dl class="grid gap-4 sm:grid-cols-3">
-        {
-          stats.map((stat) => (
-            <div class="relative rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong">
-              <dt class="text-sm text-ink-secondary">
-                <a href={stat.href} class="after:absolute after:inset-0">
-                  {stat.label}
-                </a>
-              </dt>
-              <dd class="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-ink">
-                {stat.value}
-              </dd>
-            </div>
-          ))
-        }
-      </dl>
-    </section>
+          <dl class="grid gap-4 sm:grid-cols-3">
+            {stats.map((stat) => (
+              <div class="relative rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong">
+                <dt class="text-sm text-ink-secondary">
+                  <a href={stat.href} class="after:absolute after:inset-0">
+                    {stat.label}
+                  </a>
+                </dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-ink">
+                  {stat.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )
+    }
 
     {
       latest.length > 0 && (

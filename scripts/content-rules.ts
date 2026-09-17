@@ -35,6 +35,15 @@ export interface ValidationResult {
 const STAGE_ORDER = siteConfig.lifecycle.map((stage) => stage.id);
 const STAGE_LABEL = new Map(siteConfig.lifecycle.map((stage) => [stage.id, stage.label]));
 
+/**
+ * The anti-surprise rule, read from config rather than from two stage names:
+ * a streamline in a `windingDown` stage must carry a date for one of the
+ * `terminal` stages. Rename "deprecated" and "retired" to whatever your
+ * organization calls them and the rule follows.
+ */
+const WINDING_DOWN_STAGES = siteConfig.lifecycle.filter((stage) => stage.windingDown === true);
+const TERMINAL_STAGES = siteConfig.lifecycle.filter((stage) => stage.terminal === true);
+
 /** Updates dated outside this window are almost always a typo in the year. */
 const EARLIEST_SENSIBLE = new Date('2000-01-01T00:00:00Z');
 const FUTURE_LIMIT_YEARS = 3;
@@ -70,6 +79,19 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
   const warnings: Problem[] = [];
 
   const rel = (absolute: string) => relative(repoRoot, absolute).split(sep).join('/');
+
+  // ---------- Configuration ----------
+  // Checked here rather than left to fail silently: a winding-down stage with
+  // nothing to wind down to disables the anti-surprise rule entirely, and the
+  // only symptom would be deprecations quietly passing validation.
+  if (WINDING_DOWN_STAGES.length > 0 && TERMINAL_STAGES.length === 0) {
+    const names = WINDING_DOWN_STAGES.map((stage) => `"${stage.id}"`).join(', ');
+    errors.push({
+      file: 'site.config.ts',
+      field: 'lifecycle',
+      message: `${names} is marked windingDown, but no stage is marked terminal, so there is no stage for it to point at. Mark the stage that means "switched off" with \`terminal: true\`.`,
+    });
+  }
 
   // ---------- Teams ----------
 
@@ -248,14 +270,20 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
       });
     }
 
-    // The rule that exists because surprise shutdowns are the whole problem
-    // this site was built to prevent.
-    if (data.status === 'deprecated' && !(timeline['retired'] instanceof Date)) {
+    const windingDown = WINDING_DOWN_STAGES.find((stage) => stage.id === data.status);
+    const endStage = TERMINAL_STAGES[0];
+
+    if (
+      windingDown &&
+      endStage &&
+      !TERMINAL_STAGES.some((stage) => timeline[stage.id] instanceof Date)
+    ) {
+      // Stage labels read as participles ("Retired", "Archived"), so this stays
+      // grammatical whatever an organization calls the end of its lifecycle.
       errors.push({
         file: rel(file),
         field: 'timeline',
-        message:
-          'A deprecated streamline must say when it will be retired. Add a `retired` date to the timeline so the teams depending on it know their deadline.',
+        message: `A ${windingDown.label.toLowerCase()} streamline must say when it will be ${endStage.label.toLowerCase()}. Add a \`${endStage.id}\` date to the timeline so the teams depending on it know their deadline.`,
       });
     }
 

@@ -1,0 +1,40 @@
+name: Something here is wrong or out of date
+description: A date, a status or an update on the site does not match reality.
+title: 'Out of date: '
+# No labels are applied, so this works in a fresh fork without anyone creating
+# them first. Add your own (e.g. `content`) once you have a label scheme.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks — a roadmap only works if people say when it drifts.
+
+        If it is **your team's** streamline, you do not need this form: edit the
+        file and open a pull request. Every streamline page has an **Edit this
+        page** link at the bottom that takes you straight to it.
+
+  - type: input
+    id: page
+    attributes:
+      label: Which page?
+      description: Paste the URL, or the name of the streamline.
+      placeholder: /streamlines/devops/kubernetes-1-31-upgrade/
+    validations:
+      required: true
+
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What does it say, and what should it say?
+      placeholder: |
+        It says the rollout starts on 1 October. It was moved to 20 October at
+        last week's planning session.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: urgency
+    attributes:
+      label: Is anyone acting on the wrong information right now?
+      options:
+        - label: Yes — a team is planning around a date that has changed

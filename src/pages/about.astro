@@ -1,8 +1,37 @@
 ---
+import { siteConfig } from '@config';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import PageHeader from '@/components/PageHeader.astro';
-import EmptyState from '@/components/EmptyState.astro';
+import { blobUrl } from '@/lib/content';
+import { url } from '@/lib/url';
+
+/**
+ * The page someone lands on when they have decided this site might be worth
+ * contributing to. It has to answer three things without making them read a
+ * guide first: what this is, how it works, and where to start.
+ *
+ * The full instructions live in CONTRIBUTING.md and stay there — a contributor
+ * ends up in the repository anyway, and one copy cannot drift from the other.
+ */
+
+const contributingUrl = blobUrl('CONTRIBUTING.md');
+const adoptingUrl = blobUrl('docs/adopting.md');
+
+const steps = [
+  {
+    title: 'Edit one file',
+    body: 'Every streamline is a single Markdown file. Adding one, or posting an update to one, means changing that file and nothing else.',
+  },
+  {
+    title: 'Open a pull request',
+    body: 'Your team owns its own directory, so your own team reviews and merges it. There is no central queue to wait in.',
+  },
+  {
+    title: 'It is live',
+    body: 'Continuous integration checks the content and tells you exactly what to fix if something is wrong. Once it merges, the site rebuilds itself.',
+  },
+];
 ---
 
 <BaseLayout title="About" description="What this site is, and how to add your team's work to it.">
@@ -11,9 +40,138 @@ import EmptyState from '@/components/EmptyState.astro';
     lede="What this site is for, and how to publish your team's work on it."
     width="narrow"
   />
+
   <Container width="narrow">
-    <div class="py-10">
-      <EmptyState title="The contribution guide is written in milestone 5." />
+    <div class="space-y-12 py-10 pb-16">
+      <section class="prose">
+        <p>
+          Platform teams here run a lot of work in parallel — tools being introduced, services
+          being migrated, systems being switched off. Most of it eventually lands on somebody
+          else. {siteConfig.name} is where each team writes down what it is doing, which stage that
+          work has reached, and what is about to change for the teams that depend on it.
+        </p>
+        <p>
+          It exists to make one particular thing impossible: finding out about a breaking change
+          after it has broken you. Everything on the site — the{' '}
+          <a href={url('/roadmap')}>roadmap</a>, <a href={url('/changes')}>upcoming changes</a>, the
+          strip on the front page — is built around dates that other teams need to plan around.
+        </p>
+        <p>
+          There is no database and no admin panel. The site is generated from files in a git
+          repository, so the history of what was announced, and when, is the git log.
+        </p>
+      </section>
+
+      <section aria-labelledby="how-heading">
+        <h2 id="how-heading" class="text-base font-semibold text-ink">How it works</h2>
+
+        <ol class="mt-5 space-y-4">
+          {
+            steps.map((step, index) => (
+              <li class="flex gap-4">
+                <span
+                  class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent"
+                  aria-hidden="true"
+                >
+                  {index + 1}
+                </span>
+                <div>
+                  <p class="text-sm font-medium text-ink">{step.title}</p>
+                  <p class="mt-1 text-sm leading-relaxed text-ink-secondary">{step.body}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section aria-labelledby="contribute-heading">
+        <h2 id="contribute-heading" class="text-base font-semibold text-ink">
+          Publishing your team's work
+        </h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-secondary">
+          Anyone can contribute — this is not limited to the teams already here. If your team
+          builds something other teams depend on, it belongs on this site.
+        </p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-card border border-border bg-surface p-5">
+            <h3 class="text-sm font-medium text-ink">Post an update</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+              Something changing? Add four lines to your streamline file — the date, how much it
+              affects people, a title and the detail. Two minutes.
+            </p>
+          </div>
+
+          <div class="rounded-card border border-border bg-surface p-5">
+            <h3 class="text-sm font-medium text-ink">Add a streamline</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+              New product, migration or deprecation? Copy the template in the contributing guide
+              into a new file under your team's directory. Five minutes.
+            </p>
+          </div>
+        </div>
+
+        <p class="mt-5 text-sm leading-relaxed text-ink-secondary">
+          <a href={contributingUrl} class="font-medium text-accent hover:text-accent-hover">
+            Read the contributing guide
+          </a>{' '}
+          for both, including the copy-paste templates, what the validator will and will not let
+          through, and how to run the site locally if you want to preview a change.
+        </p>
+      </section>
+
+      <section aria-labelledby="follow-heading">
+        <h2 id="follow-heading" class="text-base font-semibold text-ink">
+          Following along without visiting
+        </h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-secondary">
+          Every update is published to an <a
+            href={url('/feed.xml')}
+            class="font-medium text-accent hover:text-accent-hover">Atom feed</a
+          >, and each team has its own feed linked from its page. Point a feed reader — or a chat
+          channel that can subscribe to one — at it, and announcements come to you.
+        </p>
+      </section>
+
+      <section aria-labelledby="oss-heading">
+        <h2 id="oss-heading" class="text-base font-semibold text-ink">Running it yourself</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-secondary">
+          {siteConfig.name} is open source under the MIT licence. Everything specific to one organization
+          lives in a config file and a content folder, so another company can fork it, replace both
+          and deploy. The{' '}
+          <a href={adoptingUrl} class="font-medium text-accent hover:text-accent-hover">
+            adopting guide
+          </a>{' '}
+          covers configuration, ownership, and deployment — including what to do if your instance
+          has Pages turned off.
+        </p>
+      </section>
+
+      <section class="border-t border-border pt-8" aria-labelledby="links-heading">
+        <h2 id="links-heading" class="sr-only">Where to go next</h2>
+        <dl class="grid gap-5 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="text-ink-muted">The repository</dt>
+            <dd class="mt-1">
+              <a
+                href={siteConfig.repository.url}
+                class="font-medium text-accent hover:text-accent-hover"
+              >
+                {siteConfig.repository.url.replace(/^https?:\/\//, '')}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-ink-muted">A question this site cannot answer</dt>
+            <dd class="mt-1">
+              <a href={siteConfig.contact.url} class="font-medium text-accent hover:text-accent-hover">
+                {siteConfig.contact.label}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </section>
     </div>
   </Container>
 </BaseLayout>

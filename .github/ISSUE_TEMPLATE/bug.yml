@@ -1,0 +1,54 @@
+name: The site is broken
+description: A page renders wrong, a link is dead, a filter does not work, the build fails.
+title: 'Bug: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For something that is merely *out of date*, use the other template —
+        this one is for the site itself misbehaving.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      placeholder: |
+        Filtering the roadmap by team clears the stage filter as well.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How do we reproduce it?
+      placeholder: |
+        1. Open /roadmap/
+        2. Set Stage to "Deprecated"
+        3. Set Team to "DevOps"
+        4. The stage filter resets to All
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Where?
+      description: Browser and version, or the CI run that failed.
+      placeholder: Firefox 142 on macOS / the Deploy run for commit abc1234
+
+  - type: checkboxes
+    id: theme
+    attributes:
+      label: Anything else worth knowing
+      options:
+        - label: It happens in both light and dark themes
+        - label: It only happens on a phone or a narrow window
+        - label: It only happens when printing

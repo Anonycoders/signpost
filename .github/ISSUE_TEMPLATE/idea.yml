@@ -1,0 +1,40 @@
+name: Suggest an improvement
+description: Something the site should do that it does not do today.
+title: 'Idea: '
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The bar here is not "would this be nice" but "what could you not find
+        out, and what did that cost you". Ideas that start from a real moment
+        of confusion tend to produce much better features.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What were you trying to find out?
+      description: The situation, not the solution.
+      placeholder: |
+        I wanted to know which streamlines depend on the thing my team is about
+        to deprecate, and there was no way to tell from the site.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What do you think would help?
+      description: A rough sketch is fine. So is "no idea, but this is the problem".
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Is this about the content, or the site?
+      options:
+        - The site — a feature, a view, a way of filtering
+        - The contribution process — templates, validation, review
+        - The documentation
+        - Not sure
+    validations:
+      required: true

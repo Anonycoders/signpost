@@ -37,6 +37,16 @@ export interface LifecycleStage {
    * Used to fade completed work on the roadmap and exclude it from "active" counts.
    */
   terminal?: boolean;
+  /**
+   * True for a stage that means "this is going away". Anything sitting in such
+   * a stage must carry a date for a terminal stage, enforced by the validator —
+   * the rule that exists because surprise shutdowns are the problem this site
+   * was built to prevent.
+   *
+   * A lifecycle with a winding-down stage needs a terminal stage for it to
+   * point at.
+   */
+  windingDown?: boolean;
 }
 
 export interface Category {
@@ -166,6 +176,7 @@ export const siteConfig: SiteConfig = {
       label: 'Deprecated',
       description: 'Still running, but going away. Migrate before the retirement date.',
       tone: 'amber',
+      windingDown: true,
     },
     {
       id: 'retired',

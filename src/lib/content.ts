@@ -59,7 +59,8 @@ export interface Streamline {
   entry: CollectionEntry<'streamlines'>;
 }
 
-function blobUrl(path: string): string {
+/** A file in the content repository, on whichever host it lives on. */
+export function blobUrl(path: string): string {
   const { url: repo, branch } = siteConfig.repository;
   return `${repo.replace(/\/$/, '')}/blob/${branch}/${path}`;
 }
