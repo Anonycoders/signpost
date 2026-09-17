@@ -1,16 +1,11 @@
 ---
-import { Marked } from 'marked';
+import { renderMarkdown } from '@/lib/markdown';
 
 /**
  * Renders a Markdown string from frontmatter — update bodies, mainly.
  *
- * The long-form body of a streamline file goes through Astro's own pipeline
- * instead; this is only for the short prose that lives inside YAML fields.
- *
- * Raw HTML is dropped rather than passed through. Content is reviewed before it
- * merges, so this is not the primary defence, but it costs nothing and means a
- * stray `<script>` in a pull request cannot become a stored XSS on a site the
- * whole company reads.
+ * The rendering itself lives in `src/lib/markdown.ts` so the Atom feeds can
+ * reuse it; see the notes there about dropped raw HTML.
  */
 interface Props {
   content: string;
@@ -19,15 +14,7 @@ interface Props {
 
 const { content, class: className = 'prose' } = Astro.props;
 
-const marked = new Marked({
-  gfm: true,
-  breaks: false,
-  renderer: {
-    html: () => '',
-  },
-});
-
-const html = await marked.parse(content);
+const html = renderMarkdown(content);
 ---
 
 <div class={className} set:html={html} />

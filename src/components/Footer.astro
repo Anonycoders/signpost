@@ -15,7 +15,11 @@ const builtAtLabel = builtAt.toLocaleString('en-GB', {
 });
 ---
 
-<footer class="mt-20 border-t border-border bg-surface-muted">
+{/*
+  Kept in print, unlike the header: a printout that has been passed around for a
+  fortnight needs to say where it came from and how old it is.
+*/}
+<footer class="mt-20 border-t border-border bg-surface-muted print:mt-8 print:bg-transparent">
   <Container>
     <div class="flex flex-col gap-6 py-10 sm:flex-row sm:items-start sm:justify-between">
       <div class="max-w-sm">
@@ -30,16 +34,17 @@ const builtAtLabel = builtAt.toLocaleString('en-GB', {
       <div class="flex flex-col gap-2 text-sm sm:items-end">
         <a
           href={siteConfig.repository.url}
-          class="text-ink-secondary transition-colors hover:text-accent"
+          class="text-ink-secondary transition-colors hover:text-accent print:hidden"
           rel="noreferrer">Repository</a
         >
         <a
           href={url('/about')}
-          class="text-ink-secondary transition-colors hover:text-accent">How to contribute</a
+          class="text-ink-secondary transition-colors hover:text-accent print:hidden"
+          >How to contribute</a
         >
         <a
           href={siteConfig.contact.url}
-          class="text-ink-secondary transition-colors hover:text-accent"
+          class="text-ink-secondary transition-colors hover:text-accent print:hidden"
           rel="noreferrer">{siteConfig.contact.label}</a
         >
         <p class="mt-2 text-xs text-ink-muted">

@@ -32,6 +32,8 @@ const streamlines = await getStreamlinesForTeam(team.slug);
 const active = streamlines.filter((streamline) => !streamline.isTerminal);
 const finished = streamlines.filter((streamline) => streamline.isTerminal);
 
+const feedHref = url(`/teams/${team.slug}/feed.xml`);
+
 const RECENT_UPDATE_COUNT = 6;
 const recentUpdates = streamlines
   .flatMap((streamline) => streamline.updates)
@@ -39,7 +41,11 @@ const recentUpdates = streamlines
   .slice(0, RECENT_UPDATE_COUNT);
 ---
 
-<BaseLayout title={team.name} description={team.mission}>
+<BaseLayout
+  title={team.name}
+  description={team.mission}
+  feed={{ href: feedHref, title: `${team.name} — updates` }}
+>
   <div class="border-b border-border bg-surface">
     <Container>
       <div class="py-8 sm:py-10">
@@ -67,6 +73,9 @@ const recentUpdates = streamlines
               </a>
             ))
           }
+          <a href={feedHref} class="text-ink-muted transition-colors hover:text-accent">
+            Subscribe
+          </a>
           <a href={team.editUrl} class="text-ink-muted transition-colors hover:text-accent">
             Edit this team
           </a>

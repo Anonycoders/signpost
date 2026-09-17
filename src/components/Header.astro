@@ -15,8 +15,9 @@ const nav = [
 const current = Astro.url.pathname;
 ---
 
+{/* Navigation is of no use on paper, and it costs the top of every sheet. */}
 <header
-  class="sticky top-0 z-40 border-b border-border bg-canvas/85 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/70"
+  class="sticky top-0 z-40 border-b border-border bg-canvas/85 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/70 print:hidden"
 >
   <Container>
     <div class="flex h-16 items-center justify-between gap-4">

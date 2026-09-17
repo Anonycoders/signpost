@@ -272,6 +272,29 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
           message: `${formatDate(update.date)} looks wrong — check the year.`,
         });
       }
+
+      if (!update.effective) return;
+
+      if (update.effective < EARLIEST_SENSIBLE || update.effective > futureLimit) {
+        errors.push({
+          file: rel(file),
+          field: `updates[${index}].effective`,
+          message: `${formatDate(update.effective)} looks wrong — check the year.`,
+        });
+        return;
+      }
+
+      // `effective` exists to push an announcement forward to the day it
+      // lands. Pointing it at or before the posting date does nothing visible
+      // except file the update in the past, which is the opposite of why
+      // anyone would add the field.
+      if (update.effective <= update.date) {
+        errors.push({
+          file: rel(file),
+          field: `updates[${index}].effective`,
+          message: `effective (${formatDate(update.effective)}) is not after date (${formatDate(update.date)}). Use effective only when a change lands later than the day you are posting about it; if they are the same day, remove it.`,
+        });
+      }
     });
 
     // ---------- Staleness (warning only) ----------

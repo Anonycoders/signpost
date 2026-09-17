@@ -40,8 +40,17 @@ export interface RoadmapSubject {
 
 export interface Segment {
   stage: LifecycleStage;
+  /** Where the bar is drawn from — the window edge when the stage predates it. */
   start: Date;
   end: Date;
+  /**
+   * The date the streamline actually reached this stage, unclipped.
+   *
+   * The drawn bar has to stop at the window edge, but the text equivalent must
+   * not: a screen reader hearing "Deprecated from 1 April 2026" when the file
+   * says 16 February has been told something false.
+   */
+  rawStart: Date;
   startPct: number;
   widthPct: number;
   /** True when this stage has not been reached yet. */
@@ -137,6 +146,7 @@ export function buildLane(subject: RoadmapSubject, window: RoadmapWindow, today:
       stage: entry.stage,
       start: clippedStart,
       end: clippedEnd,
+      rawStart,
       startPct: pct(clippedStart),
       widthPct: pct(clippedEnd) - pct(clippedStart),
       planned: rawStart.getTime() > today.getTime(),

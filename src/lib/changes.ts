@@ -131,15 +131,22 @@ export function buildChangeFeed(
  * The items worth interrupting someone for: high-impact updates landing inside
  * the attention window. Shared by /changes/ and the home page strip so the two
  * can never disagree.
+ *
+ * Bounded at both ends. The horizon keeps next year's deprecation out of a
+ * strip about what to do now; the floor drops changes that have already
+ * landed and stayed landed, so a breaking change from last spring does not sit
+ * on the home page forever demanding attention nobody can still give it.
  */
 export function needsAttention(
   streamlines: ChangeSubject[],
   today: Date,
   windowDays: number,
   minWeight: number,
+  recentDays: number,
 ): ChangeItem[] {
   const now = today.getTime();
   const horizon = now + windowDays * 86_400_000;
+  const floor = now - recentDays * 86_400_000;
 
   return streamlines
     .flatMap((streamline) =>
@@ -147,6 +154,6 @@ export function needsAttention(
         .filter((update) => update.impact.weight >= minWeight)
         .map((update): ChangeItem => ({ kind: 'update', date: landsOn(update), streamline, update })),
     )
-    .filter((item) => item.date.getTime() <= horizon)
+    .filter((item) => item.date.getTime() <= horizon && item.date.getTime() >= floor)
     .sort((a, b) => weightOf(b) - weightOf(a) || b.date.getTime() - a.date.getTime());
 }

@@ -112,6 +112,25 @@ describe('buildLane', () => {
     expect(round(first!.startPct)).toBe(0);
   });
 
+  it('keeps the true start date on a clipped segment', () => {
+    // The drawn bar starts at the window edge; the text equivalent must not
+    // claim the streamline was proposed on that day.
+    const lane = buildLane(
+      { id: 'a', timeline: [entry('deprecated', '2026-02-16'), entry('retired', '2027-03-31')] },
+      window,
+      today,
+    );
+    const [first] = lane.segments;
+    expect(first!.start.toISOString()).toBe('2026-04-01T00:00:00.000Z');
+    expect(first!.rawStart.toISOString()).toBe('2026-02-16T00:00:00.000Z');
+  });
+
+  it('leaves rawStart equal to start when nothing was clipped', () => {
+    const lane = buildLane({ id: 'a', timeline: [entry('rolling-out', '2026-07-01')] }, window, today);
+    const [only] = lane.segments;
+    expect(only!.rawStart.toISOString()).toBe(only!.start.toISOString());
+  });
+
   it('drops a stage that ended before the window opened', () => {
     const lane = buildLane(
       { id: 'a', timeline: [entry('proposed', '2019-01-01'), entry('in-development', '2020-01-01')] },

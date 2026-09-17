@@ -11,9 +11,14 @@ interface Props {
   /** Page title, without the site name — that is appended here. */
   title?: string;
   description?: string;
+  /**
+   * A second feed offered alongside the site-wide one — a team's own, on a
+   * team page, so "subscribe" in the browser means the thing being looked at.
+   */
+  feed?: { href: string; title: string };
 }
 
-const { title, description = siteConfig.description } = Astro.props;
+const { title, description = siteConfig.description, feed } = Astro.props;
 
 const fullTitle = title ? `${title} · ${siteConfig.name}` : `${siteConfig.name} — ${siteConfig.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'http://localhost:4321');
@@ -35,9 +40,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'http://localhost:43
     <meta name="twitter:card" content="summary" />
 
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    {
+      /* The page's own feed comes first: browsers and readers offer the first
+         one they find, and on a team page that should be the team's. */
+      feed && <link rel="alternate" type="application/atom+xml" title={feed.title} href={feed.href} />
+    }
     <link
       rel="alternate"
-      type="application/rss+xml"
+      type="application/atom+xml"
       title={`${siteConfig.name} — all updates`}
       href={url('/feed.xml')}
     />

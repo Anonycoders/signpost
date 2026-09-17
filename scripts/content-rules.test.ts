@@ -290,6 +290,53 @@ updates: []
     expect(problem?.message).toContain('breaking, action-required, info');
   });
 
+  it('accepts an effective date after the posting date', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    effective: 2026-10-01
+    impact: breaking
+    title: Ingress v1beta1 is removed on 1 October`,
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('rejects an effective date that is not after the posting date', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    effective: 2026-08-01
+    impact: breaking
+    title: Ingress v1beta1 is removed`,
+      }),
+    });
+
+    const problem = result.errors.find((error) => error.field === 'updates[0].effective');
+    expect(problem?.message).toContain('is not after date');
+    expect(problem?.message).toContain('remove it');
+  });
+
+  it('rejects an effective date equal to the posting date', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    effective: 2026-09-10
+    impact: info
+    title: Rollout has started`,
+      }),
+    });
+
+    expect(result.errors.some((error) => error.field === 'updates[0].effective')).toBe(true);
+  });
+
   it('rejects frontmatter that is not valid YAML', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,

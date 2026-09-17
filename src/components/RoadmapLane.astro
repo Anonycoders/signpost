@@ -20,10 +20,12 @@ const { streamline, lane } = Astro.props;
 
 // The bars carry meaning through colour and position, neither of which a screen
 // reader can convey. This sentence says the same thing in words.
+// `rawStart`, not `start`: the bar stops at the window edge, but the sentence
+// must still say the date the file actually gives.
 const spoken = lane.segments
   .map(
     (segment) =>
-      `${segment.stage.label} from ${formatDateShort(segment.start)}${segment.planned ? ' (planned)' : ''}`,
+      `${segment.stage.label} from ${formatDateShort(segment.rawStart)}${segment.planned ? ' (planned)' : ''}`,
   )
   .join('; ');
 
@@ -46,6 +48,7 @@ const searchText = [
     // lands on what is still moving.
     streamline.isTerminal && 'opacity-55',
   ]}
+  data-lane
   data-streamline
   data-team={streamline.team.slug}
   data-category={streamline.category.id}
@@ -53,7 +56,7 @@ const searchText = [
   data-search={searchText}
 >
   {/* Sticky so the name stays readable while the track is scrolled sideways on a phone. */}
-  <div class="sticky left-0 z-10 w-56 shrink-0 bg-canvas py-2.5 pr-4">
+  <div class="sticky left-0 z-10 w-56 shrink-0 bg-canvas py-2.5 pr-4 print:py-1.5">
     <a
       href={streamline.href}
       class="line-clamp-2 text-[0.8125rem] font-medium leading-snug text-ink hover:text-accent"
@@ -63,7 +66,7 @@ const searchText = [
     </a>
   </div>
 
-  <div class="relative min-w-0 flex-1 py-2.5">
+  <div class="relative min-w-0 flex-1 py-2.5 print:py-1.5">
     {
       lane.hasContent ? (
         <>
@@ -80,7 +83,7 @@ const searchText = [
                 segment.continues && 'rounded-r-none',
               ]}
               style={`left:${segment.startPct}%;width:${segment.widthPct}%`}
-              title={`${segment.stage.label}: from ${formatDateShort(segment.start)}${segment.planned ? ' (planned)' : ''}`}
+              title={`${segment.stage.label}: from ${formatDateShort(segment.rawStart)}${segment.planned ? ' (planned)' : ''}`}
               aria-hidden="true"
             />
           ))}

@@ -7,6 +7,12 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # "Today" is baked in at build time: relative dates ("in 3 weeks"), the today
+  # marker on the roadmap, and the split between upcoming and recent changes.
+  # Without a nightly rebuild, a repository nobody merges to for a fortnight
+  # serves a fortnight-old idea of now.
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:

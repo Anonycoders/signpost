@@ -199,53 +199,58 @@ describe('buildChangeFeed', () => {
 });
 
 describe('needsAttention', () => {
+  /** windowDays 60, minWeight 20, recentDays 30 — the shipped defaults. */
+  const attention = (streamlines: ChangeSubject[]) =>
+    needsAttention(streamlines, today, 60, 20, 30);
+
   it('keeps high-impact items inside the window', () => {
-    const items = needsAttention(
-      [subject({ updates: [update('2026-10-01', breaking, 'Breaks soon')] })],
-      today,
-      60,
-      20,
-    );
+    const items = attention([subject({ updates: [update('2026-10-01', breaking, 'Breaks soon')] })]);
     expect(items).toHaveLength(1);
   });
 
   it('drops items below the weight bar', () => {
-    const items = needsAttention([subject({ updates: [update('2026-10-01', info)] })], today, 60, 20);
-    expect(items).toEqual([]);
+    expect(attention([subject({ updates: [update('2026-10-01', info)] })])).toEqual([]);
   });
 
   it('measures the horizon from the effective date', () => {
     const announced = update('2026-09-10', breaking);
-    const items = needsAttention(
-      [subject({ updates: [{ ...announced, effective: utc('2027-06-01') }] })],
-      today,
-      60,
-      20,
-    );
+    const items = attention([
+      subject({ updates: [{ ...announced, effective: utc('2027-06-01') }] }),
+    ]);
     expect(items).toEqual([]);
   });
 
   it('drops items beyond the horizon', () => {
-    const items = needsAttention(
-      [subject({ updates: [update('2027-06-01', breaking)] })],
-      today,
-      60,
-      20,
-    );
-    expect(items).toEqual([]);
+    expect(attention([subject({ updates: [update('2027-06-01', breaking)] })])).toEqual([]);
+  });
+
+  it('drops a breaking change that landed long ago', () => {
+    // Without a floor, last spring's breaking change sits on the home page
+    // forever asking for action nobody can still take.
+    expect(attention([subject({ updates: [update('2026-03-01', breaking)] })])).toEqual([]);
+  });
+
+  it('keeps a breaking change that landed within the recent window', () => {
+    // Just landed is exactly when people are still scrambling.
+    const items = attention([subject({ updates: [update('2026-09-05', breaking)] })]);
+    expect(items).toHaveLength(1);
+  });
+
+  it('measures the floor from the effective date too', () => {
+    // Posted long ago, lands next month: still very much someone's problem.
+    const announced = update('2026-01-20', breaking);
+    const items = attention([
+      subject({ updates: [{ ...announced, effective: utc('2026-10-01') }] }),
+    ]);
+    expect(items).toHaveLength(1);
   });
 
   it('ranks breaking above action-required', () => {
-    const items = needsAttention(
-      [
-        subject({
-          updates: [update('2026-10-01', actionRequired, 'Act'), update('2026-09-20', breaking, 'Break')],
-        }),
-      ],
-      today,
-      60,
-      20,
-    );
+    const items = attention([
+      subject({
+        updates: [update('2026-10-01', actionRequired, 'Act'), update('2026-09-20', breaking, 'Break')],
+      }),
+    ]);
     expect(items.map((item) => item.kind === 'update' && item.update.title)).toEqual([
       'Break',
       'Act',

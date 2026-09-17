@@ -49,7 +49,9 @@ const total = groups.reduce((count, group) => count + group.lanes.length, 0);
 
   <Container width="wide">
     <div class="py-8">
-      <Filters teams={teams} total={total} showSearch={false} />
+      <div class="print:hidden">
+        <Filters teams={teams} total={total} showSearch={false} />
+      </div>
 
       {/* Colour is doing real work on this page, so it gets a key. */}
       <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-secondary">
@@ -95,10 +97,10 @@ const total = groups.reduce((count, group) => count + group.lanes.length, 0);
               than squeezing six quarters into 320 pixels.
             */}
             <div
-              class="overflow-x-auto rounded-card border border-border bg-canvas"
+              class="roadmap-frame overflow-x-auto rounded-card border border-border bg-canvas"
               data-hide-when-empty
             >
-              <div class="min-w-[52rem]">
+              <div class="roadmap-track min-w-[52rem]">
                 <div class="flex items-end border-b border-border px-4 pt-3 pb-2">
                   <div class="sticky left-0 z-10 w-56 shrink-0 bg-canvas pr-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                     Streamline
@@ -181,5 +183,34 @@ const total = groups.reduce((count, group) => count + group.lanes.length, 0);
       transparent 0 3px,
       rgb(255 255 255 / 0.5) 3px 6px
     );
+  }
+
+  @media print {
+    /*
+     * On screen the track scrolls sideways inside a fixed frame. On paper
+     * there is nothing to scroll, so the frame has to let the whole timeline
+     * out and the track has to fit the sheet instead of insisting on 52rem.
+     */
+    .roadmap-frame {
+      overflow: visible !important;
+      border: none;
+    }
+
+    .roadmap-track {
+      min-width: 0 !important;
+    }
+  }
+</style>
+
+<style is:global>
+  /*
+   * A roadmap is six quarters wide and a dozen rows deep: portrait turns it
+   * into a column of stubs. Scoped to this page — every other page prints
+   * perfectly well upright.
+   */
+  @media print {
+    @page {
+      size: landscape;
+    }
   }
 </style>

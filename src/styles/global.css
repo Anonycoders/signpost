@@ -91,64 +91,70 @@
 /* ---------- Dark theme overrides ----------
  * Same variable names, different values, so every utility and component
  * switches theme without a single `dark:` class.
+ *
+ * Screen only. Paper is white whatever the reader's theme is, and a dark
+ * palette printed onto it is either unreadable or a waste of toner — so print
+ * simply falls through to the light values above.
  */
-:root[data-theme='dark'] {
-  --color-canvas: #0c0e12;
-  --color-surface: #14171d;
-  --color-surface-muted: #1a1e26;
-  --color-surface-raised: #191d24;
+@media screen {
+  :root[data-theme='dark'] {
+    --color-canvas: #0c0e12;
+    --color-surface: #14171d;
+    --color-surface-muted: #1a1e26;
+    --color-surface-raised: #191d24;
 
-  --color-border: #262b34;
-  --color-border-strong: #363d49;
+    --color-border: #262b34;
+    --color-border-strong: #363d49;
 
-  --color-ink: #eef1f5;
-  --color-ink-secondary: #a7b0bd;
-  --color-ink-muted: #7d8794;
+    --color-ink: #eef1f5;
+    --color-ink-secondary: #a7b0bd;
+    --color-ink-muted: #7d8794;
 
-  --color-accent: #8f9bfb;
-  --color-accent-hover: #a6b0fc;
-  --color-accent-soft: #1b2044;
-  --color-accent-ink: #0c0e12;
+    --color-accent: #8f9bfb;
+    --color-accent-hover: #a6b0fc;
+    --color-accent-soft: #1b2044;
+    --color-accent-ink: #0c0e12;
 
-  --color-tone-gray-bg: #21262e;
-  --color-tone-gray-border: #333a45;
-  --color-tone-gray-ink: #b0b8c2;
-  --color-tone-gray-solid: #6b7580;
+    --color-tone-gray-bg: #21262e;
+    --color-tone-gray-border: #333a45;
+    --color-tone-gray-ink: #b0b8c2;
+    --color-tone-gray-solid: #6b7580;
 
-  --color-tone-blue-bg: #16243f;
-  --color-tone-blue-border: #26395e;
-  --color-tone-blue-ink: #97b7fc;
-  --color-tone-blue-solid: #4b82f0;
+    --color-tone-blue-bg: #16243f;
+    --color-tone-blue-border: #26395e;
+    --color-tone-blue-ink: #97b7fc;
+    --color-tone-blue-solid: #4b82f0;
 
-  --color-tone-violet-bg: #241c40;
-  --color-tone-violet-border: #382b60;
-  --color-tone-violet-ink: #bfa8fb;
-  --color-tone-violet-solid: #8b5cf6;
+    --color-tone-violet-bg: #241c40;
+    --color-tone-violet-border: #382b60;
+    --color-tone-violet-ink: #bfa8fb;
+    --color-tone-violet-solid: #8b5cf6;
 
-  --color-tone-green-bg: #10291e;
-  --color-tone-green-border: #1d4432;
-  --color-tone-green-ink: #83d8a9;
-  --color-tone-green-solid: #22a565;
+    --color-tone-green-bg: #10291e;
+    --color-tone-green-border: #1d4432;
+    --color-tone-green-ink: #83d8a9;
+    --color-tone-green-solid: #22a565;
 
-  --color-tone-amber-bg: #2e2011;
-  --color-tone-amber-border: #49341b;
-  --color-tone-amber-ink: #f5c77f;
-  --color-tone-amber-solid: #d9840d;
+    --color-tone-amber-bg: #2e2011;
+    --color-tone-amber-border: #49341b;
+    --color-tone-amber-ink: #f5c77f;
+    --color-tone-amber-solid: #d9840d;
 
-  --color-tone-red-bg: #2e1717;
-  --color-tone-red-border: #4b2624;
-  --color-tone-red-ink: #f8a9a5;
-  --color-tone-red-solid: #e4483f;
+    --color-tone-red-bg: #2e1717;
+    --color-tone-red-border: #4b2624;
+    --color-tone-red-ink: #f8a9a5;
+    --color-tone-red-solid: #e4483f;
 
-  --color-tone-teal-bg: #0d2826;
-  --color-tone-teal-border: #17423e;
-  --color-tone-teal-ink: #7cdbd1;
-  --color-tone-teal-solid: #14a89a;
+    --color-tone-teal-bg: #0d2826;
+    --color-tone-teal-border: #17423e;
+    --color-tone-teal-ink: #7cdbd1;
+    --color-tone-teal-solid: #14a89a;
 
-  --color-tone-pink-bg: #2d1622;
-  --color-tone-pink-border: #472436;
-  --color-tone-pink-ink: #f6a6c3;
-  --color-tone-pink-solid: #ec4899;
+    --color-tone-pink-bg: #2d1622;
+    --color-tone-pink-border: #472436;
+    --color-tone-pink-ink: #f6a6c3;
+    --color-tone-pink-solid: #ec4899;
+  }
 }
 
 /* ---------- Base ---------- */
@@ -201,6 +207,61 @@
 
   p {
     text-wrap: pretty;
+  }
+}
+
+/* ---------- Print ----------
+ * People do print a roadmap: to take into a planning meeting, to put on a
+ * wall, to attach to a migration ticket. What comes out should be the content
+ * and nothing else — no navigation, no theme toggle, no scrollbars hiding half
+ * a timeline.
+ *
+ * Page-specific rules (the roadmap's landscape sheet) live with the page.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body {
+    background: #fff;
+    /*
+     * Colour is not decoration here: a lifecycle stage, an impact level and
+     * the today line are all identified by it. Browsers drop background
+     * graphics by default, which would turn the roadmap into a row of empty
+     * outlines, so ask for them explicitly.
+     */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Sticky and fixed positioning has no meaning on paper, and an element
+     stuck to a viewport that no longer exists prints on top of the content. */
+  [class*='sticky'],
+  [class*='fixed'] {
+    position: static !important;
+  }
+
+  /* A card, a change row or a roadmap lane split across two sheets is a card
+     nobody can read. Groups of them are deliberately left breakable: keeping a
+     whole team's roadmap together sounds tidy, but in practice it pushes six
+     rows onto the next sheet and leaves half a page blank. */
+  article,
+  li,
+  [data-lane] {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Underlining every link turns a printed page into noise; the text still
+     carries the meaning. */
+  a {
+    text-decoration: none;
   }
 }
 

@@ -14,7 +14,8 @@ const { title, lede, width = 'default' } = Astro.props;
 
 <div class="border-b border-border bg-surface">
   <Container width={width}>
-    <div class="py-10 sm:py-12">
+    {/* Tighter on paper: vertical space here is a page someone has to turn. */}
+    <div class="py-10 sm:py-12 print:py-4">
       <h1 class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{title}</h1>
       {lede && <p class="mt-2.5 max-w-2xl text-[0.9375rem] leading-relaxed text-ink-secondary">{lede}</p>}
       <slot />

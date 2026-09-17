@@ -27,6 +27,7 @@
     "@astrojs/check": "^0.9.10",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.5",
+    "@xmldom/xmldom": "^0.9.12",
     "gray-matter": "^4.0.3",
     "js-yaml": "^5.4.2",
     "tailwindcss": "^4.3.3",
