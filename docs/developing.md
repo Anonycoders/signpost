@@ -18,6 +18,7 @@ things are before you change one of them.
 - [The two validation layers](#the-two-validation-layers)
 - [Styling](#styling)
 - [Adding a page](#adding-a-page)
+- [Adding a doc](#adding-a-doc)
 - [Feeds](#feeds)
 - [CI](#ci)
 - [Deploy](#deploy)
@@ -68,6 +69,7 @@ rendered HTML goes through exactly these modules:
 ```
 content/teams/<slug>.yaml
 content/streamlines/<team>/<slug>.md
+docs/*.md
    │
    │  src/content.config.ts     glob loaders; the id is the path, so
    │                            content/streamlines/devops/secret-scanning.md
@@ -81,9 +83,13 @@ src/lib/roadmap.ts              lanes, segments, markers, the today line
 src/lib/changes.ts              upcoming/recent grouping, "needs attention"
 src/lib/timeline.ts             which stage a date falls in
 src/lib/feeds.ts  atom.ts       feed entries and the XML around them
+src/lib/doc-links.ts            where a link in a guide should point
    ▼
 src/pages/*                     routes; src/components/* render
 ```
+
+`docs/` is content too. The guides you are reading are a third collection, and
+[adding a doc](#adding-a-doc) covers what that means for anyone writing one.
 
 ### `src/lib/content.ts` is the only place that reads the collections
 
@@ -99,7 +105,7 @@ advancing a streamline does not relabel years of its history.
 It caches:
 
 ```ts
-let cache: Promise<{ teams: Team[]; streamlines: Streamline[] }> | null = null;
+let cache: Promise<{ teams: Team[]; streamlines: Streamline[]; docs: Doc[] }> | null = null;
 
 function loadOnce() {
   cache ??= load();
@@ -108,8 +114,8 @@ function loadOnce() {
 ```
 
 Every accessor — `getTeams`, `getStreamlines`, `getTeam`, `getStreamline`,
-`getStreamlinesForTeam`, `getSuperseded`, `getSupersededBy`, `getAllUpdates` —
-goes through `loadOnce()`. A page with twenty routes parses the content once.
+`getStreamlinesForTeam`, `getSuperseded`, `getSupersededBy`, `getAllUpdates`,
+`getDocs`, `getDoc` — goes through `loadOnce()`. A page with twenty routes parses the content once.
 **Do not call `getCollection` anywhere else.** If you need a new shape of the
 data, add an accessor here.
 
@@ -279,6 +285,11 @@ means the choice does not persist).
 belongs in a component, because the same component renders in both themes and on
 paper. If you need a colour that no token provides, add a token.
 
+**Long-form Markdown** — streamline bodies, update bodies, the guides in `docs/`
+— all render inside `.prose`, a component layer at the bottom of `global.css`
+covering headings, lists, links, tables, blockquotes and code. It is built from
+the same tokens, so it follows the theme like everything else.
+
 ---
 
 ## Adding a page
@@ -329,7 +340,56 @@ For a non-HTML route, write a `.ts` file exporting
 
 If the page is top-level, add it to the nav in
 [`src/components/Header.astro`](../src/components/Header.astro), which currently
-lists Roadmap, Changes, Streamlines, Teams and About.
+lists Roadmap, Changes, Streamlines, Teams, Guide and About. One array drives
+both the desktop nav and the mobile menu, so that is a single edit.
+
+---
+
+## Adding a doc
+
+Drop a Markdown file into `docs/`. There is no list to register it in: the
+collection is a flat glob over `docs/*.md`, the page title is the file's own
+first `#` heading, and the card on `/docs/` uses its opening paragraph. It
+appears at `/docs/<filename>/` on the next build.
+
+Three things follow from these files being read in two places at once — here,
+and on GitHub, from the same single copy.
+
+**No frontmatter.** The `docs` collection deliberately has no schema. GitHub
+renders a frontmatter block as a table of raw keys at the top of the file, which
+is the first thing a reader would see. Title and summary are read out of the
+body instead, in [`src/lib/doc-links.ts`](../src/lib/doc-links.ts).
+
+**Write links as repository paths.** `../site.config.ts`, `adopting.md`,
+`#a-section` — whatever is correct for someone reading the file on GitHub. The
+site rewrites them on the way out, by four rules:
+
+| A link like | Becomes |
+| --- | --- |
+| `#a-section` | itself, untouched — heading ids match GitHub's |
+| `adopting.md#5-deploy-to-pages` | `/docs/adopting/#5-deploy-to-pages` |
+| `../src/pages/roadmap/index.astro` | `/roadmap/` — the view, not its source |
+| anything else | a GitHub blob URL for that file |
+
+Only `index.astro` counts as naming a view, because only it stands for exactly
+one URL: a link to `[slug].astro` or `feed.xml.ts` is a link to code, and
+resolves to the blob like any other file. `CONTRIBUTING.md` is not in `docs/`,
+so it is never a page and always resolves to GitHub — which is right, since its
+reader is on their way to opening a pull request.
+
+The rules are a pure function in `doc-links.ts`, with the cases pinned down in
+`doc-links.test.ts`. They are attached to the Markdown pipeline by
+[`src/lib/doc-links-plugin.ts`](../src/lib/doc-links-plugin.ts). That pipeline is
+shared with streamline bodies, so the plugin is written as a factory: Sätteri
+calls it once per document with the file being compiled, and it returns `false`
+for anything that is not a guide — leaving itself out of that document's
+pipeline entirely rather than running and doing nothing.
+
+**Tables and code blocks are handled for you.** The same plugin wraps each table
+so it scrolls in its own box on a phone instead of dragging the page sideways,
+and `.prose` in `global.css` styles both with the site's tokens. Syntax
+highlighting is off (`astro.config.mjs`): the default highlighter ships one
+fixed palette, which reads as a dark rectangle dropped into a light page.
 
 ---
 
@@ -406,7 +466,7 @@ instance without breaking yours.
 | "the most severe impact level" | Compute it from `weight` — see `topWeight` in [`ChangeRow.astro`](../src/components/ChangeRow.astro) |
 | A hex colour or a `dark:` colour class | A token from `global.css`, or a tone via `tone.ts` |
 | A leading-slash internal href | `url()` from [`url.ts`](../src/lib/url.ts) |
-| `https://github.com/...` | `blobUrl()` / `profileUrl()` from `content.ts`, which follow `siteConfig.repository.url` to a GitHub Enterprise host |
+| `https://github.com/...` | `blobUrl()` / `profileUrl()` from `content.ts`, which follow `siteConfig.repository.url` to a GitHub Enterprise host — the docs link rules are handed the same config for the same reason |
 | A hardcoded window (`60`, `30`, quarters) | `attentionWindowDays`, `attentionWeight`, `recentWindowDays`, `roadmapQuarters` |
 | A locale-specific date format | The formatters in [`date.ts`](../src/lib/date.ts), which render in UTC at `siteConfig.locale` |
 | A stage label in a sentence | Build the sentence from `stage.label` — the validator's messages are the worked example |

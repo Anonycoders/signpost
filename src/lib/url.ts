@@ -6,10 +6,9 @@
  * a leading slash.
  */
 
-const RAW_BASE = import.meta.env.BASE_URL ?? '/';
+import { withBase } from './base';
 
-/** Base without a trailing slash: '' for root installs, '/signpost' for subpaths. */
-const BASE = RAW_BASE.endsWith('/') ? RAW_BASE.slice(0, -1) : RAW_BASE;
+const RAW_BASE = import.meta.env.BASE_URL ?? '/';
 
 /**
  * Build an internal URL.
@@ -18,15 +17,7 @@ const BASE = RAW_BASE.endsWith('/') ? RAW_BASE.slice(0, -1) : RAW_BASE;
  * Paths that look like files (`/feed.xml`) keep their exact shape.
  */
 export function url(path = '/'): string {
-  const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
-
-  const looksLikeFile = /\.[a-z0-9]+$/i.test(withLeadingSlash);
-  const normalized =
-    looksLikeFile || withLeadingSlash.endsWith('/')
-      ? withLeadingSlash
-      : `${withLeadingSlash}/`;
-
-  return `${BASE}${normalized}` || '/';
+  return withBase(path, RAW_BASE);
 }
 
 /** True when `href` is the page currently being rendered. */

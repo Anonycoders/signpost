@@ -1,0 +1,55 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Container from '@/components/Container.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import EmptyState from '@/components/EmptyState.astro';
+import { getDocs } from '@/lib/content';
+
+/**
+ * The shelf the guides sit on. Nothing is listed here by hand — a Markdown file
+ * dropped into `docs/` appears on its own, titled by its own first heading.
+ */
+
+const docs = await getDocs();
+---
+
+<BaseLayout
+  title="Guides"
+  description="How to read this site, how to run your own copy of it, and how to change it."
+>
+  <PageHeader
+    title="Guides"
+    lede="How to read this site, how to run your own copy of it, and how to change it."
+    width="narrow"
+  />
+
+  <Container width="narrow">
+    <div class="py-8 pb-16 sm:py-10">
+      {
+        docs.length === 0 ? (
+          <EmptyState
+            title="No guides yet."
+            description="Add a Markdown file under docs/ and it will appear here."
+          />
+        ) : (
+          <ul class="space-y-4">
+            {docs.map((doc) => (
+              <li>
+                <article class="group relative rounded-card border border-border bg-surface p-5 transition-colors hover:border-border-strong">
+                  <h2 class="text-[0.9375rem] font-semibold leading-snug text-ink">
+                    <a href={doc.href} class="after:absolute after:inset-0">
+                      {doc.title}
+                    </a>
+                  </h2>
+                  {doc.summary && (
+                    <p class="mt-2 text-sm leading-relaxed text-ink-secondary">{doc.summary}</p>
+                  )}
+                </article>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </Container>
+</BaseLayout>

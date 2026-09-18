@@ -15,9 +15,12 @@ import { url } from '@/lib/url';
  * ends up in the repository anyway, and one copy cannot drift from the other.
  */
 
+// The contributing guide stays a link into the repository: its reader is on
+// their way to opening a pull request anyway. The two guides that are pages of
+// this site are linked as pages.
 const contributingUrl = blobUrl('CONTRIBUTING.md');
-const adoptingUrl = blobUrl('docs/adopting.md');
-const usingUrl = blobUrl('docs/using.md');
+const adoptingUrl = url('/docs/adopting');
+const usingUrl = url('/docs/using');
 
 const steps = [
   {

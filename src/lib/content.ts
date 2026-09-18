@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 import { siteConfig, type Category, type ImpactLevel, type LifecycleStage } from '@config';
+import { DOCS_DIR, docRoute, docSummary, docTitle } from './doc-links';
 import type { LinkData, OwnerData, StreamlineData, TeamData } from './schema';
 import { getCategory, getImpact, getStage, isTerminalStage } from './taxonomy';
 import { stageOn } from './timeline';
@@ -34,6 +35,21 @@ export interface Update {
   body?: string;
   /** The streamline this update belongs to, for cross-streamline feeds. */
   streamline: Streamline;
+}
+
+/**
+ * One of the written guides in `docs/`, rendered as a page.
+ *
+ * It carries no frontmatter, so its title and summary are read from the body —
+ * the same `# ` heading and opening paragraph GitHub shows.
+ */
+export interface Doc {
+  slug: string;
+  title: string;
+  summary: string;
+  href: string;
+  editUrl: string;
+  entry: CollectionEntry<'docs'>;
 }
 
 export interface Streamline {
@@ -104,13 +120,46 @@ function missingTeam(slug: string): Team {
   };
 }
 
-let cache: Promise<{ teams: Team[]; streamlines: Streamline[] }> | null = null;
+/**
+ * The order the guides are offered in: the one for readers, then the one for
+ * organizations adopting the site, then the one for people changing its code.
+ *
+ * This is a preference about reading order, not a registry. A guide that is not
+ * named here still appears — after these, alphabetically — so dropping a file
+ * into `docs/` is all it takes to publish it.
+ */
+const DOC_ORDER = ['using', 'adopting', 'developing'];
+
+let cache: Promise<{ teams: Team[]; streamlines: Streamline[]; docs: Doc[] }> | null = null;
+
+function buildDoc(entry: CollectionEntry<'docs'>): Doc {
+  const body = entry.body ?? '';
+  const path = `${DOCS_DIR}/${entry.id}.md`;
+
+  return {
+    slug: entry.id,
+    title: docTitle(body, entry.id),
+    summary: docSummary(body),
+    href: url(docRoute(entry.id)),
+    editUrl: blobUrl(path),
+    entry,
+  };
+}
 
 async function load() {
-  const [teamEntries, streamlineEntries] = await Promise.all([
+  const [teamEntries, streamlineEntries, docEntries] = await Promise.all([
     getCollection('teams'),
     getCollection('streamlines'),
+    getCollection('docs'),
   ]);
+
+  const docs = docEntries.map(buildDoc).sort((a, b) => {
+    const rank = (slug: string) => {
+      const index = DOC_ORDER.indexOf(slug);
+      return index === -1 ? DOC_ORDER.length : index;
+    };
+    return rank(a.slug) - rank(b.slug) || a.slug.localeCompare(b.slug);
+  });
 
   const teams = teamEntries.map(buildTeam).sort((a, b) => a.name.localeCompare(b.name));
   const teamBySlug = new Map(teams.map((team) => [team.slug, team]));
@@ -171,7 +220,7 @@ async function load() {
 
   streamlines.sort((a, b) => a.title.localeCompare(b.title));
 
-  return { teams, streamlines };
+  return { teams, streamlines, docs };
 }
 
 function loadOnce() {
@@ -185,6 +234,15 @@ export async function getTeams(): Promise<Team[]> {
 
 export async function getStreamlines(): Promise<Streamline[]> {
   return (await loadOnce()).streamlines;
+}
+
+/** The written guides, in reading order. */
+export async function getDocs(): Promise<Doc[]> {
+  return (await loadOnce()).docs;
+}
+
+export async function getDoc(slug: string): Promise<Doc | undefined> {
+  return (await getDocs()).find((doc) => doc.slug === slug);
 }
 
 export async function getTeam(slug: string): Promise<Team | undefined> {

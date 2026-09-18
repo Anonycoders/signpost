@@ -1,6 +1,10 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { satteri } from '@astrojs/markdown-satteri';
 import tailwindcss from '@tailwindcss/vite';
+
+import { siteConfig } from './site.config';
+import docLinksPlugin from './src/lib/doc-links-plugin';
 
 /**
  * SITE_URL and BASE_PATH let the same build target a user/org Pages site
@@ -17,6 +21,34 @@ export default defineConfig({
   trailingSlash: 'always',
   build: {
     format: 'directory',
+  },
+  markdown: {
+    /*
+     * No syntax highlighting. The default highlighter ships one fixed palette,
+     * which reads as a dark rectangle dropped into a light page; the site's own
+     * surface and ink tokens already follow the theme. Nothing in `content/`
+     * uses a fenced block, so this only ever applies to the guides.
+     */
+    syntaxHighlight: false,
+    /**
+     * The default Markdown processor, with one plugin added.
+     *
+     * The guides in `docs/` are written to be read on GitHub, so their links
+     * are repository paths; this rewrites them for a reader of the site. The
+     * plugin is a factory: it is handed the file being compiled and excludes
+     * itself from every document that is not a guide, so streamline bodies —
+     * which share this pipeline — are compiled without it.
+     */
+    processor: satteri({
+      hastPlugins: [
+        docLinksPlugin({
+          base,
+          repository: siteConfig.repository.url,
+          branch: siteConfig.repository.branch,
+          root: import.meta.dirname,
+        }),
+      ],
+    }),
   },
   vite: {
     plugins: [tailwindcss()],
