@@ -27,6 +27,18 @@ import { withBase } from './base';
 /** The directory the docs collection is loaded from, relative to the repo root. */
 export const DOCS_DIR = 'docs';
 
+/**
+ * The heading a guide puts its own contents list under.
+ *
+ * A reader on GitHub has no other way to see the shape of a long file, so two
+ * of the guides write the list into their text. The page shows the same list
+ * beside the document instead, where it stays while you read, so this section
+ * is hidden here (`global.css`) and left out of that list — a contents entry
+ * for the contents is noise. The value is the id, which is the slug of the
+ * heading's text, here and on GitHub.
+ */
+export const INLINE_TOC_ID = 'contents';
+
 /** Where a rendered doc lives on the site. */
 export function docRoute(slug: string): string {
   return `/${DOCS_DIR}/${slug}`;
@@ -140,6 +152,18 @@ export function resolveDocHref(href: string, context: DocLinkContext): string {
 export function docTitle(body: string, fallback: string): string {
   const match = /^#\s+(.+?)\s*$/m.exec(body);
   return match ? match[1] : fallback;
+}
+
+/**
+ * How long a guide takes to read, in minutes.
+ *
+ * Shown in the title band so someone can tell a two-minute answer from a
+ * twenty-minute one before they start. 200 words a minute is the unhurried end
+ * of the usual range, which is the right end for a reference document.
+ */
+export function readingMinutes(body: string): number {
+  const words = body.trim().split(/\s+/).filter((word) => word !== '').length;
+  return Math.max(1, Math.round(words / 200));
 }
 
 /**

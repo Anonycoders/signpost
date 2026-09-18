@@ -3,72 +3,185 @@ import { render } from 'astro:content';
 
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
+import DocToc from '@/components/DocToc.astro';
 import { getDocs, type Doc } from '@/lib/content';
+import { INLINE_TOC_ID } from '@/lib/doc-links';
 import { url } from '@/lib/url';
 
 /**
  * One of the guides, rendered as a page.
  *
  * These files are read in two places — here and on GitHub — and there is only
- * one copy of each. So the page adds as little as it can around the document:
- * no page header duplicating a title the Markdown already carries, and no
- * restructuring. What it does add is the way back out: the other guides, and
- * the file itself for anyone who would rather read or edit it in the
- * repository.
+ * one copy of each, so the page adds nothing to the document and takes nothing
+ * away from it. What it adds is around it: the title band every other section
+ * page on this site has, the contents beside the text rather than only at the
+ * top of it, the guide either side of this one, and the file itself for anyone
+ * who would rather read or edit it in the repository.
+ *
+ * The `<h1>` in that band is the document's own title, lifted out of the body
+ * by the Markdown plugin so the page has exactly one.
  */
 
 export async function getStaticPaths() {
   const docs = await getDocs();
-  return docs.map((doc) => ({
+
+  return docs.map((doc, index) => ({
     params: { slug: doc.slug },
-    props: { doc, others: docs.filter((other) => other.slug !== doc.slug) },
+    props: {
+      doc,
+      previous: docs[index - 1],
+      next: docs[index + 1],
+    },
   }));
 }
 
 interface Props {
   doc: Doc;
-  others: Doc[];
+  previous?: Doc;
+  next?: Doc;
 }
 
-const { doc, others } = Astro.props;
-const { Content } = await render(doc.entry);
+const { doc, previous, next } = Astro.props;
+const { Content, headings } = await render(doc.entry);
+
+/*
+ * Sections and their subsections. `h1` is the title, which is now the band;
+ * anything deeper than `h3` is detail that would make the list longer than the
+ * page it summarises; and the guide's own contents section is this list, which
+ * does not need an entry for itself.
+ */
+const contents = headings.filter(
+  (heading) => (heading.depth === 2 || heading.depth === 3) && heading.slug !== INLINE_TOC_ID,
+);
+
+const sidebar = [previous, next].filter((entry): entry is Doc => entry !== undefined);
 ---
 
 <BaseLayout title={doc.title} description={doc.summary}>
-  <Container width="narrow">
-    <div class="py-10 pb-16">
-      <p class="text-xs text-ink-muted">
-        <a href={url('/docs')} class="hover:text-ink-secondary">Guides</a>
-      </p>
+  <div class="border-b border-border bg-surface">
+    <Container>
+      <div class="py-8 sm:py-10 print:py-4">
+        <p class="text-xs text-ink-muted">
+          <a href={url('/docs')} class="hover:text-ink-secondary">Guides</a>
+        </p>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{doc.title}</h1>
+        <p class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+          <span>{doc.minutes} min read</span>
+          <span aria-hidden="true">·</span>
+          <a href={doc.editUrl} class="hover:text-ink-secondary print:hidden">Read it on GitHub</a>
+        </p>
+      </div>
+    </Container>
+  </div>
 
-      <article class="prose mt-4">
-        <Content />
-      </article>
+  <Container>
+    {/*
+      No `items-start`: the rail is `sticky`, so its column has to be as tall as
+      the document beside it or it would stop following after one screen.
+    */}
+    <div class="gap-x-12 py-8 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_14rem]">
+      <div class="min-w-0 pb-4 lg:pb-12">
+        {/* On a phone the contents fold away; the sticky rail is off screen there. */}
+        <div class="mb-8 lg:hidden print:hidden">
+          <DocToc headings={contents} variant="inline" />
+        </div>
 
-      <footer class="mt-12 border-t border-border pt-6">
+        <article class="prose doc-prose max-w-[46rem]">
+          <Content />
+        </article>
+
         {
-          others.length > 0 && (
-            <>
-              <h2 class="text-xs font-medium uppercase tracking-wide text-ink-muted">
-                Other guides
-              </h2>
-              <ul class="mt-3 space-y-2">
-                {others.map((other) => (
-                  <li class="text-sm">
-                    <a href={other.href} class="font-medium text-accent hover:text-accent-hover">
-                      {other.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </>
+          sidebar.length > 0 && (
+            <nav
+              class="mt-12 grid gap-3 border-t border-border pt-6 sm:grid-cols-2 print:hidden"
+              aria-label="Other guides"
+            >
+              {previous && (
+                <a
+                  href={previous.href}
+                  class="group rounded-card border border-border bg-surface p-4 transition-colors hover:border-border-strong"
+                >
+                  <span class="text-xs text-ink-muted">Previous</span>
+                  <span class="mt-1 block text-sm font-medium text-ink group-hover:text-accent">
+                    {previous.title}
+                  </span>
+                </a>
+              )}
+              {next && (
+                <a
+                  href={next.href}
+                  class="group rounded-card border border-border bg-surface p-4 transition-colors hover:border-border-strong sm:col-start-2 sm:text-right"
+                >
+                  <span class="text-xs text-ink-muted">Next</span>
+                  <span class="mt-1 block text-sm font-medium text-ink group-hover:text-accent">
+                    {next.title}
+                  </span>
+                </a>
+              )}
+            </nav>
           )
         }
+      </div>
 
-        <p class="mt-6 text-xs text-ink-muted">
-          <a href={doc.editUrl} class="hover:text-ink-secondary">Read this page's source on GitHub</a>
-        </p>
-      </footer>
+      <aside class="hidden lg:block print:hidden">
+        <DocToc headings={contents} variant="rail" />
+      </aside>
     </div>
   </Container>
 </BaseLayout>
+
+<script>
+  /*
+   * Marks which section the reader is in. Progressive: without it the contents
+   * are still a list of working links, which is what they are on GitHub.
+   */
+  const links = new Map<string, HTMLAnchorElement>();
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')) {
+    links.set(link.dataset.tocLink ?? '', link);
+  }
+
+  if (links.size > 0) {
+    const targets = [...links.keys()]
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => element !== null);
+
+    /* Clear of the sticky header, which is what "the top of the page" means here. */
+    const HEADER = 96;
+
+    const mark = () => {
+      /*
+       * The last heading scrolled past, rather than the first one on screen: in
+       * a long section the heading is out of the viewport while its text is
+       * still what you are reading. Read from the elements each time instead of
+       * tracking intersections, so that a jump — an anchor, a restored scroll
+       * position, Find in page — lands on the right entry rather than on
+       * whatever the observer happened to be told about.
+       */
+      let current = targets[0];
+      for (const target of targets) {
+        if (target.getBoundingClientRect().top > HEADER) break;
+        current = target;
+      }
+
+      for (const [id, link] of links) {
+        /* The styling hangs off the attribute, in global.css. */
+        if (current !== undefined && id === current.id) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      }
+    };
+
+    let queued = false;
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        mark();
+      });
+    };
+
+    mark();
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll, { passive: true });
+  }
+</script>

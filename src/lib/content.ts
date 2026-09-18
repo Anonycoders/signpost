@@ -1,7 +1,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 
 import { siteConfig, type Category, type ImpactLevel, type LifecycleStage } from '@config';
-import { DOCS_DIR, docRoute, docSummary, docTitle } from './doc-links';
+import { DOCS_DIR, docRoute, docSummary, docTitle, readingMinutes } from './doc-links';
 import type { LinkData, OwnerData, StreamlineData, TeamData } from './schema';
 import { getCategory, getImpact, getStage, isTerminalStage } from './taxonomy';
 import { stageOn } from './timeline';
@@ -47,6 +47,8 @@ export interface Doc {
   slug: string;
   title: string;
   summary: string;
+  /** Minutes to read, shown in the title band. */
+  minutes: number;
   href: string;
   editUrl: string;
   entry: CollectionEntry<'docs'>;
@@ -140,6 +142,7 @@ function buildDoc(entry: CollectionEntry<'docs'>): Doc {
     slug: entry.id,
     title: docTitle(body, entry.id),
     summary: docSummary(body),
+    minutes: readingMinutes(body),
     href: url(docRoute(entry.id)),
     editUrl: blobUrl(path),
     entry,

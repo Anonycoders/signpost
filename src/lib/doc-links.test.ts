@@ -4,6 +4,7 @@ import {
   docSlugForPath,
   docSummary,
   docTitle,
+  readingMinutes,
   resolveDocHref,
   viewRouteForPageSource,
   type DocLinkContext,
@@ -223,6 +224,22 @@ describe('docTitle', () => {
 
   it('falls back when a doc has no level-one heading', () => {
     expect(docTitle('## Only a section\n', 'developing')).toBe('developing');
+  });
+});
+
+describe('readingMinutes', () => {
+  it('rounds to whole minutes at 200 words a minute', () => {
+    expect(readingMinutes('word '.repeat(600))).toBe(3);
+  });
+
+  it('never claims a document takes no time at all', () => {
+    expect(readingMinutes('# Title\n')).toBe(1);
+    expect(readingMinutes('')).toBe(1);
+  });
+
+  it('is not thrown off by the blank lines between paragraphs', () => {
+    const body = `${'word '.repeat(200)}\n\n\n${'word '.repeat(200)}`;
+    expect(readingMinutes(body)).toBe(2);
   });
 });
 

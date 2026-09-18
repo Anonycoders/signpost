@@ -419,3 +419,113 @@
     min-width: 34rem;
   }
 }
+
+/* ---------- The guides ----------
+ * Everything here is scoped to `.doc-prose`, which only the pages under
+ * /docs/ use. The rules above are shared with streamline bodies and update
+ * bodies, and a guide is a different kind of document: ten screens of
+ * reference text that someone navigates rather than reads straight through.
+ */
+@layer components {
+  /*
+   * The opening paragraph carries the whole point of the guide, and on a page
+   * whose title now sits in the band above it, it is also what tells the reader
+   * they are in the right place.
+   */
+  .doc-prose > p:first-of-type {
+    color: var(--color-ink-secondary);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+  }
+
+  /*
+   * Sections need to be findable while scrolling, so they are larger than the
+   * shared scale and carry their space above them. The offset keeps a heading
+   * clear of the sticky header when you arrive by anchor.
+   */
+  .doc-prose h2 {
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    margin-top: 2.75rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .doc-prose h3 {
+    font-size: 1.0625rem;
+    margin-top: 2rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .doc-prose h4 {
+    scroll-margin-top: 5rem;
+  }
+
+  /*
+   * A guide separates sections with `---`, which on GitHub is the only device
+   * available. Here the heading scale already does that work, so the rule is
+   * turned down to a wide gap with a hairline in it rather than a line across
+   * the page.
+   */
+  .doc-prose hr {
+    margin-block: 3rem;
+    border-top-color: var(--color-border);
+    opacity: 0.6;
+  }
+
+  /*
+   * Half of what anyone does with a reference document is send someone else a
+   * link to one part of it. The permalink is quiet until the heading is hovered
+   * or the link itself is focused, and never prints.
+   */
+  .doc-prose .heading-anchor {
+    color: var(--color-ink-muted);
+    margin-left: 0.4rem;
+    opacity: 0;
+    text-decoration: none;
+    transition: opacity 0.12s ease-in-out;
+  }
+
+  /* Drawn rather than written, so it stays out of the heading's own text. */
+  .doc-prose .heading-anchor::before {
+    content: '#';
+  }
+
+  .doc-prose h2:hover .heading-anchor,
+  .doc-prose h3:hover .heading-anchor,
+  .doc-prose .heading-anchor:focus-visible {
+    opacity: 1;
+  }
+
+  @media print {
+    .doc-prose .heading-anchor {
+      display: none;
+    }
+  }
+
+  /*
+   * Two of the guides write their own "Contents" list, because a reader on
+   * GitHub has no other way to see the shape of a long file. This page has the
+   * same list beside the text, where it stays while you read, so the copy in
+   * the body is hidden rather than shown twice. The id is Astro's slug of the
+   * heading text, which is also GitHub's.
+   */
+  .doc-prose > h2#contents,
+  .doc-prose > h2#contents + ul {
+    display: none;
+  }
+
+  .doc-prose > h2#contents + ul + hr {
+    display: none;
+  }
+
+  /*
+   * The rail marks the section you are in — the one affordance a printed
+   * contents list cannot have. Set by the script on the doc page; the styling
+   * hangs off the attribute so that nothing breaks if the script never runs.
+   */
+  .doc-toc a[aria-current] {
+    border-left-color: var(--color-accent);
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+}

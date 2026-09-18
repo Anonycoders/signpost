@@ -360,6 +360,21 @@ renders a frontmatter block as a table of raw keys at the top of the file, which
 is the first thing a reader would see. Title and summary are read out of the
 body instead, in [`src/lib/doc-links.ts`](../src/lib/doc-links.ts).
 
+**The page is built around the document, not added to it.** Write the file as
+you would write it for GitHub; the page supplies the furniture. The first `# `
+heading becomes the title band every other section page on this site has, and is
+taken out of the body so the page has one `<h1>`. The `##` and `###` headings
+become the contents rail beside the text, which marks the section you are in and
+gives each heading a permalink. The opening paragraph is the lede, both on the
+page and on the card on `/docs/`, and the length of the file is the "N min read".
+Nothing in that list is configured per document, so a new guide arrives with all
+of it.
+
+A guide may also write its own `## Contents` list, as two of these do, because a
+reader on GitHub has no other way to see the shape of a long file. On the site
+that section is hidden: the rail is the same list, in a place where it stays
+while you read. Nothing else in a guide is ever hidden.
+
 **Write links as repository paths.** `../site.config.ts`, `adopting.md`,
 `#a-section` — whatever is correct for someone reading the file on GitHub. The
 site rewrites them on the way out, by four rules:
@@ -384,6 +399,13 @@ shared with streamline bodies, so the plugin is written as a factory: Sätteri
 calls it once per document with the file being compiled, and it returns `false`
 for anything that is not a guide — leaving itself out of that document's
 pipeline entirely rather than running and doing nothing.
+
+The same plugin also gives every heading its `id`, with the same slugger Astro
+uses, so a guide's own `#anchor` links keep working and keep matching GitHub's.
+It has to: Astro assigns ids in a later pass, so a permalink written here cannot
+read the id it should point at. Astro keeps an id that is already set, and
+reports it in the headings it hands the page, so the heading, its permalink and
+the rail agree without anything having to be kept in step by hand.
 
 **Tables and code blocks are handled for you.** The same plugin wraps each table
 so it scrolls in its own box on a phone instead of dragging the page sideways,
