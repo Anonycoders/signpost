@@ -30,6 +30,8 @@ Signpost gives every team one file per effort. They edit it when the plan change
 
 Plus a filterable catalog of every streamline, a page per team, a page per streamline with its full timeline and update history, and an `/about/` page explaining the whole thing to a first-time visitor.
 
+**[docs/using.md](docs/using.md)** is the guide for the people who only ever read the site: what a hatched bar with a diamond on it means, which window the attention strip covers, and how to point a feed reader or a Slack channel at one team's work.
+
 ---
 
 ## Quickstart
@@ -128,7 +130,7 @@ Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.c
 
 ## Contributing to Signpost itself
 
-Bug reports, ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md#changing-the-site-itself) and the [Code of Conduct](CODE_OF_CONDUCT.md). If you have adopted this somewhere, we would genuinely like to hear what you had to change.
+Bug reports, ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md#changing-the-site-itself) and the [Code of Conduct](CODE_OF_CONDUCT.md). **[docs/developing.md](docs/developing.md)** is the tour of the code: the data flow file by file, where the two validation layers live, and what must never be hardcoded. If you have adopted this somewhere, we would genuinely like to hear what you had to change.
 
 ## License
 

@@ -302,8 +302,10 @@ npm run preview    # serve the built site
 
 ## Changing the site itself
 
-Contributions to the code are welcome too. The repository layout, the config
-surface and the local workflow are described in
+Contributions to the code are welcome too.
+[docs/developing.md](docs/developing.md) is the guide for that: the data flow,
+the two validation layers, the styling tokens and what not to hardcode. The
+config surface an organization owns is described separately in
 [docs/adopting.md](docs/adopting.md). Run `npm run check && npm run test` before
 opening the PR; anything that changes what a contributor sees when they get a
 file wrong should come with a test asserting the new wording, because those
