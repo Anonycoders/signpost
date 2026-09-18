@@ -391,6 +391,14 @@ and `.prose` in `global.css` styles both with the site's tokens. Syntax
 highlighting is off (`astro.config.mjs`): the default highlighter ships one
 fixed palette, which reads as a dark rectangle dropped into a light page.
 
+**After changing `repository` in `site.config.ts`, build with `--force`.** Those
+blob URLs are baked in when the Markdown is rendered, and Astro caches a
+rendered doc against that file's own digest, under `node_modules/.astro`. Change
+the repository and the Markdown has not changed, so the guides are served from
+the cache and keep the old URLs while the rest of the site updates — which looks
+exactly like a bug in the link rules. `astro build --force` and `astro dev
+--force` clear that cache. CI installs from scratch and never sees it.
+
 ---
 
 ## Feeds

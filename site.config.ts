@@ -130,13 +130,13 @@ export const siteConfig: SiteConfig = {
   organization: 'Example Organization',
 
   repository: {
-    url: 'https://github.com/example-org/signpost',
+    url: 'https://github.com/Anonycoders/signpost',
     branch: 'main',
   },
 
   contact: {
     label: '#platform-questions',
-    url: 'https://github.com/example-org/signpost/issues',
+    url: 'https://github.com/Anonycoders/signpost/issues',
   },
 
   locale: 'en-GB',

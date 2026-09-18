@@ -4,13 +4,13 @@ blank_issues_enabled: true
 
 contact_links:
   - name: A question about a particular streamline
-    url: https://github.com/example-org/signpost/blob/main/CONTRIBUTING.md#getting-help
+    url: https://github.com/Anonycoders/signpost/blob/main/CONTRIBUTING.md#getting-help
     about: Ask the team that owns it — every team page lists their channel. They will answer faster than an issue here.
 
   - name: How do I add or update my team's work?
-    url: https://github.com/example-org/signpost/blob/main/CONTRIBUTING.md
+    url: https://github.com/Anonycoders/signpost/blob/main/CONTRIBUTING.md
     about: The contributing guide covers it in five minutes, with templates to copy.
 
   - name: How do I run this for my own organization?
-    url: https://github.com/example-org/signpost/blob/main/docs/adopting.md
+    url: https://github.com/Anonycoders/signpost/blob/main/docs/adopting.md
     about: Fork, configure, deploy — including what to do if your instance has Pages disabled.
