@@ -39,7 +39,7 @@ Plus a filterable catalog of every streamline, a page per team, a page per strea
 ```bash
 git clone https://github.com/Anonycoders/signpost.git
 cd signpost
-nvm use          # Node 24, per .nvmrc — the repo sets engine-strict
+nvm use          # Node 26, per .nvmrc — the repo sets engine-strict
 npm install
 npm run dev      # http://localhost:4321
 ```

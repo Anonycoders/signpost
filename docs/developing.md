@@ -29,7 +29,7 @@ things are before you change one of them.
 ## Setup
 
 ```bash
-nvm use        # reads .nvmrc — Node 24
+nvm use        # reads .nvmrc — Node 26
 npm install
 npm run dev    # http://localhost:4321
 ```
@@ -37,8 +37,10 @@ npm run dev    # http://localhost:4321
 `package.json` declares `"engines": { "node": ">=22.12.0" }` and `.npmrc` sets
 `engine-strict=true`, so an install on an older Node stops with a sentence about
 the version instead of a stack trace from inside Astro or vitest. `.nvmrc` pins
-24, which is also what CI installs (`node-version-file: .nvmrc`), so "works on
-my machine" and "works in CI" mean the same Node.
+26, which is also what CI installs (`node-version-file: .nvmrc`), so "works on
+my machine" and "works in CI" mean the same Node. The two numbers say different
+things on purpose: `engines` is the oldest Node a fork can run on, `.nvmrc` is
+the one this repository is built and tested against.
 
 | Script | What it runs | What it gates |
 | --- | --- | --- |
@@ -58,6 +60,13 @@ npm run validate && npm run check && npm run test && npm run build
 ```
 
 `npm run test:watch` is the same vitest in watch mode while you work.
+
+**TypeScript stays on 6.x.** `astro check` drives the compiler through its
+programmatic API, and TypeScript 7's native compiler does not expose that API
+yet — install 7 and `npm run check` does not report errors, it refuses to run,
+which takes type checking out of the gate. Astro tracks the work in
+[roadmap discussion 1321](https://github.com/withastro/roadmap/discussions/1321);
+raise the dependency when `@astrojs/check` widens its peer range past `^6`.
 
 ---
 
