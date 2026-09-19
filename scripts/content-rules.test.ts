@@ -383,3 +383,264 @@ describe('warnings', () => {
     expect(result.warnings).toEqual([]);
   });
 });
+
+describe('rollout phases', () => {
+  /** Frontmatter for a `phases:` block, indented to sit under the key. */
+  const phases = (yaml: string) => `\nphases:${yaml}`;
+
+  const PILOT_THEN_EVERYONE = phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: generally-available
+    timeline:
+      rolling-out: 2026-02-01
+      generally-available: 2026-04-01
+  - name: Phase 2
+    audience: Everyone else
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-09-01`);
+
+  it('accepts a streamline with phases', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: PILOT_THEN_EVERYONE,
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('accepts a phase with no timeline of its own', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: proposed`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts overlapping phases, which are how rollouts actually run', () => {
+    // Deliberately no cross-phase ordering rule: a later phase may start
+    // before an earlier one finishes, and may even be further along.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-06-01
+  - name: Phase 2
+    audience: Everyone else
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-05-01`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('rejects two phases with the same name', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: proposed
+  - name: phase 1
+    audience: Everyone else
+    status: proposed`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'Two phases are both called "phase 1". Phase names have to be unique within a streamline so a reader can tell which wave they are in.',
+    );
+    expect(result.errors[0]?.field).toBe('phases[1].name');
+  });
+
+  it('rejects a phase with no audience', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    status: proposed`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A phase needs an audience — say who gets it in this phase, for example "Pilot teams" or "Everyone".',
+    );
+  });
+
+  it('rejects a phase whose audience is blank', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: ""
+    status: proposed`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A phase needs an audience — say who gets it in this phase, for example "Pilot teams" or "Everyone".',
+    );
+    expect(result.errors[0]?.field).toBe('phases[0].audience');
+  });
+
+  it('rejects a phase with no name', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - audience: Pilot teams
+    status: proposed`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain('A phase needs a name.');
+  });
+
+  it('rejects a winding-down stage as a phase status', () => {
+    // "deprecated" is a perfectly good streamline status and a meaningless
+    // phase status: the audience is not deprecated, the product is.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: deprecated`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A phase moves through the rollout, so its status cannot be a winding-down or terminal stage. Must be one of: proposed, in-development, rolling-out, generally-available.',
+    );
+  });
+
+  it('rejects a terminal stage as a phase status', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: retired`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A phase moves through the rollout, so its status cannot be a winding-down or terminal stage. Must be one of: proposed, in-development, rolling-out, generally-available.',
+    );
+  });
+
+  it('rejects a phase timeline that runs backwards', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      in-development: 2026-06-01
+      rolling-out: 2026-03-01`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'In "Phase 1", Rolling out (2026-03-01) is dated before In development (2026-06-01), but it comes later in the lifecycle. Check the dates.',
+    );
+    expect(result.errors[0]?.field).toBe('phases[0].timeline');
+  });
+
+  it('rejects an unknown stage in a phase timeline', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: proposed
+    timeline:
+      shipped: 2026-06-01`),
+      }),
+    });
+
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it('warns, without blocking, when a phase claims a stage its own date has not reached', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: generally-available
+    timeline:
+      generally-available: 2099-01-01`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(messagesOf(result.warnings)).toContain(
+      '"Phase 1" is marked Generally available, but its Generally available date is 2099-01-01, which has not happened yet. Either the status is early or the date is.',
+    );
+    expect(result.warnings[0]?.field).toBe('phases[0].status');
+  });
+
+  it('warns when a phase has already passed the stage it claims', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      rolling-out: 2000-01-01
+      generally-available: 2000-02-01`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(messagesOf(result.warnings)).toContain(
+      '"Phase 1" is marked Rolling out, but it reached Generally available on 2000-02-01. Move the status on, or correct the date.',
+    );
+  });
+
+  it('does not warn about a future date for a stage the phase has not claimed', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-01-01
+      generally-available: 2099-01-01`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+});

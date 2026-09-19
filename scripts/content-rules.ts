@@ -287,6 +287,78 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
       });
     }
 
+    // ---------- Rollout phases ----------
+    //
+    // No rule compares one phase with another. Overlapping phases are the
+    // normal case — a pilot is still bedding in while the next wave starts —
+    // and a site that called that an error would be wrong about how rollouts
+    // actually run. Each phase is only checked against itself.
+
+    const seenPhaseNames = new Map<string, number>();
+
+    data.phases.forEach((phase, index) => {
+      const key = phase.name.trim().toLowerCase();
+      const firstAt = seenPhaseNames.get(key);
+
+      if (firstAt !== undefined) {
+        errors.push({
+          file: rel(file),
+          field: `phases[${index}].name`,
+          message: `Two phases are both called "${phase.name}". Phase names have to be unique within a streamline so a reader can tell which wave they are in.`,
+        });
+      } else {
+        seenPhaseNames.set(key, index);
+      }
+
+      const phaseTimeline = (phase.timeline ?? {}) as Record<string, Date | undefined>;
+      const dated = STAGE_ORDER.filter((stage) => phaseTimeline[stage] instanceof Date).map(
+        (stage) => ({ stage, date: phaseTimeline[stage] as Date }),
+      );
+
+      for (let i = 1; i < dated.length; i += 1) {
+        const previous = dated[i - 1]!;
+        const current = dated[i]!;
+
+        if (current.date.getTime() < previous.date.getTime()) {
+          errors.push({
+            file: rel(file),
+            field: `phases[${index}].timeline`,
+            message: `In "${phase.name}", ${STAGE_LABEL.get(current.stage)} (${formatDate(current.date)}) is dated before ${STAGE_LABEL.get(previous.stage)} (${formatDate(previous.date)}), but it comes later in the lifecycle. Check the dates.`,
+          });
+        }
+      }
+
+      // A phase claiming a state its own dates do not support. A warning, not
+      // an error: the dates may simply be the plan and the status the truth of
+      // this morning, and blocking a merge over that would teach people to
+      // leave the dates out.
+      const statusLabel = STAGE_LABEL.get(phase.status) ?? phase.status;
+      const statusDate = phaseTimeline[phase.status];
+      const now = Date.now();
+
+      if (statusDate instanceof Date && statusDate.getTime() > now) {
+        warnings.push({
+          file: rel(file),
+          field: `phases[${index}].status`,
+          message: `"${phase.name}" is marked ${statusLabel}, but its ${statusLabel} date is ${formatDate(statusDate)}, which has not happened yet. Either the status is early or the date is.`,
+        });
+      }
+
+      const overtaken = dated.find(
+        (entry) =>
+          entry.date.getTime() <= now &&
+          STAGE_ORDER.indexOf(entry.stage) > STAGE_ORDER.indexOf(phase.status),
+      );
+
+      if (overtaken) {
+        warnings.push({
+          file: rel(file),
+          field: `phases[${index}].status`,
+          message: `"${phase.name}" is marked ${statusLabel}, but it reached ${STAGE_LABEL.get(overtaken.stage)} on ${formatDate(overtaken.date)}. Move the status on, or correct the date.`,
+        });
+      }
+    });
+
     // ---------- Updates ----------
 
     const futureLimit = new Date();
