@@ -259,6 +259,23 @@ around its dot. Under the heading, a line summarises the next move — "Next:
 deprecated on 1 March 2027, in 5 months." — or says "No dates planned beyond
 today."
 
+**Rollout phases**, where a streamline has them, sit under the stepper. Some
+things land for everyone on one day; most arrive in waves, and the stepper can
+only tell you about the wave in front. The tracker splits that out: one row per
+group, each row leading with who it is, then the stage that group is at and the
+dates for it. Your row is the one to read. The stepper says a thing is rolling
+out; the phase tracker says whether it is rolling out *to you*.
+
+The row a highlight sits on is the wave in motion — the line above the tracker
+names its audience, so "Currently reaching the pilot teams" is readable without
+studying the table. Faded rows are groups that already have it, kept as a record
+rather than removed. Rows in neither state are still ahead: the date on one is a
+plan, the same as a hollow dot on the stepper. If every row has faded, the
+rollout is finished and the line says so.
+
+A streamline with no phase tracker is not one without a plan — it is one that
+lands for everybody at once.
+
 **Retirement callouts** sit above everything else when they apply, because they
 are the reason this site exists:
 

@@ -178,7 +178,39 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `timeline` | yes | At least one date, including one for the current `status` |
 | `links` | no | `label` + full `url`. Migration guides, dashboards, docs |
 | `supersedes` | no | `team-slug/streamline-slug` of the thing this replaces |
+| `phases` | no | The rollout, audience by audience — see below |
 | `updates` | no | Newest first |
+
+### Rollout phases
+
+When something arrives in waves, say so. **Phases are audiences, not tasks** — a
+phase is a group of people who get the thing at a particular point, not a chunk
+of work on the way to shipping it.
+
+```yaml
+phases:
+  - name: Phase 1 — pilot
+    audience: Platform and DevOps teams
+    status: generally-available
+    timeline:
+      rolling-out: 2026-02-01
+      generally-available: 2026-04-01
+  - name: Phase 2 — product teams
+    audience: Everyone building on the platform
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-09-01
+```
+
+Names have to be unique within the streamline. `audience` is required — it is
+the first thing a reader looks at. `status` and `timeline` work exactly as they
+do at the top of the file, except that a phase cannot be `deprecated` or
+`retired`: phases progress, products deprecate, and the retirement of the thing
+itself belongs to the streamline. `timeline` is optional, for a phase that is
+declared before it is planned.
+
+Phases may overlap — one wave is usually still bedding in when the next starts —
+and the top-level `status` and `timeline` stay the streamline's own.
 
 ### Lifecycle stages
 
