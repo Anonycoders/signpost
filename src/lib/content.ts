@@ -194,7 +194,18 @@ async function load() {
 
     const timeline = resolveTimeline(data.timeline as Record<string, Date | undefined>);
 
-    const phases: Phase[] = data.phases.map((phase) => ({
+    /*
+     * `?? []` rather than trusting the schema default. The default only runs
+     * when a file is parsed, and Astro caches parsed entries by file digest —
+     * so a site that takes this feature from upstream without touching its
+     * content has a warm cache full of entries that predate the `phases` key
+     * and are never re-parsed. Reaching straight for `.map` there turns an
+     * optional, backward-compatible addition into a crash on the first
+     * `astro dev` after the merge, which is the one moment an adopter is least
+     * able to diagnose it. Clearing the cache (`--force`) fixes the data; this
+     * makes the fall back to "no phases" harmless in the meantime.
+     */
+    const phases: Phase[] = (data.phases ?? []).map((phase) => ({
       name: phase.name,
       audience: phase.audience,
       stage: getStage(phase.status),

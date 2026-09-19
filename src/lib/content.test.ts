@@ -57,6 +57,21 @@ const entries = {
       body: '',
       data: streamlineData({ title: 'Shared runners' }),
     },
+    {
+      id: 'devops/cached-before-phases',
+      body: '',
+      /*
+       * An entry as Astro's content cache holds it from before this feature
+       * existed: no `phases` key at all, because the schema that parsed it had
+       * none. Entries are cached by file digest, so an unchanged content file
+       * is never re-parsed and the schema default never runs for it.
+       */
+      data: (() => {
+        const data = streamlineData({ title: 'Wiki search' }) as Record<string, unknown>;
+        delete data.phases;
+        return data;
+      })(),
+    },
   ],
 };
 
@@ -66,16 +81,25 @@ vi.mock('astro:content', () => ({
 
 let phased: Awaited<ReturnType<typeof import('./content').getStreamline>>;
 let unphased: Awaited<ReturnType<typeof import('./content').getStreamline>>;
+let cached: Awaited<ReturnType<typeof import('./content').getStreamline>>;
 
 beforeAll(async () => {
   const { getStreamline } = await import('./content');
   phased = await getStreamline('devops/phased');
   unphased = await getStreamline('devops/unphased');
+  cached = await getStreamline('devops/cached-before-phases');
 });
 
 describe('streamline phases', () => {
   it('gives a streamline with no phases an empty array, so no page branches on undefined', () => {
     expect(unphased?.phases).toEqual([]);
+  });
+
+  it('survives an entry cached before phases existed, rather than crashing on upgrade', () => {
+    // The schema default cannot help here: it runs when a file is parsed, and
+    // this entry is one the content cache is holding from an older schema.
+    expect(cached?.phases).toEqual([]);
+    expect(cached?.title).toBe('Wiki search');
   });
 
   it('keeps the phases in the order the author wrote them', () => {
