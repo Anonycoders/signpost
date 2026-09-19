@@ -2,10 +2,13 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 import { siteConfig, type Category, type ImpactLevel, type LifecycleStage } from '@config';
 import { DOCS_DIR, docRoute, docSummary, docTitle, readingMinutes } from './doc-links';
+import type { Phase } from './phases';
 import type { LinkData, OwnerData, StreamlineData, TeamData } from './schema';
 import { getCategory, getImpact, getStage, isTerminalStage } from './taxonomy';
-import { stageOn } from './timeline';
+import { stageOn, type TimelineEntry } from './timeline';
 import { url } from './url';
+
+export type { Phase } from './phases';
 
 /**
  * The shape every page reads.
@@ -67,6 +70,12 @@ export interface Streamline {
   links: LinkData[];
   /** Stage id -> date, in lifecycle order, only stages that have a date. */
   timeline: Array<{ stage: LifecycleStage; date: Date }>;
+  /**
+   * The audience-by-audience rollout, in the order the author wrote it.
+   * Always an array — a streamline that lands for everyone at once simply has
+   * none, so no page has to branch on undefined.
+   */
+  phases: Phase[];
   /** Newest first. Populated after construction so updates can point back here. */
   updates: Update[];
   /** True when the streamline has reached a stage where it no longer changes. */
@@ -132,6 +141,18 @@ function missingTeam(slug: string): Team {
  */
 const DOC_ORDER = ['using', 'adopting', 'developing'];
 
+/**
+ * A sparse stage -> date map from the frontmatter, resolved into stage objects
+ * in lifecycle order. Shared by a streamline's own timeline and each of its
+ * phases, so both orderings come from the same place.
+ */
+function resolveTimeline(raw: Record<string, Date | undefined> | undefined): TimelineEntry[] {
+  if (!raw) return [];
+  return siteConfig.lifecycle
+    .filter((stage) => raw[stage.id] instanceof Date)
+    .map((stage) => ({ stage, date: raw[stage.id] as Date }));
+}
+
 let cache: Promise<{ teams: Team[]; streamlines: Streamline[]; docs: Doc[] }> | null = null;
 
 function buildDoc(entry: CollectionEntry<'docs'>): Doc {
@@ -170,11 +191,15 @@ async function load() {
   const streamlines = streamlineEntries.map((entry) => {
     const data = entry.data as StreamlineData;
     const [teamSlug = '', slug = ''] = entry.id.split('/');
-    const timelineData = data.timeline as Record<string, Date | undefined>;
 
-    const timeline = siteConfig.lifecycle
-      .filter((stage) => timelineData[stage.id] instanceof Date)
-      .map((stage) => ({ stage, date: timelineData[stage.id] as Date }));
+    const timeline = resolveTimeline(data.timeline as Record<string, Date | undefined>);
+
+    const phases: Phase[] = data.phases.map((phase) => ({
+      name: phase.name,
+      audience: phase.audience,
+      stage: getStage(phase.status),
+      timeline: resolveTimeline(phase.timeline as Record<string, Date | undefined> | undefined),
+    }));
 
     const streamline: Streamline = {
       id: entry.id,
@@ -187,6 +212,7 @@ async function load() {
       owners: data.owners,
       links: data.links ?? [],
       timeline,
+      phases,
       updates: [],
       isTerminal: isTerminalStage(data.status),
       href: url(`/streamlines/${entry.id}`),

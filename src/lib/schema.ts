@@ -63,6 +63,53 @@ export const dateSchema = z.union([z.date(), z.string()]).transform((value, ctx)
   return parsed;
 });
 
+/**
+ * Stage -> date, as a sparse map over the configured lifecycle. Stages may be
+ * skipped; unknown stage names are rejected. Used for a streamline's own
+ * timeline and, in the same shape, for each rollout phase's.
+ */
+function timelineSchema() {
+  return z.strictObject(
+    Object.fromEntries(stageIds.map((id) => [id, dateSchema.optional()])) as Record<
+      string,
+      z.ZodOptional<typeof dateSchema>
+    >,
+  );
+}
+
+/**
+ * The stages a rollout phase may be in.
+ *
+ * Phases progress; products deprecate. An audience is never "deprecated" — the
+ * thing being rolled out to it is, and that belongs to the streamline as a
+ * whole. Derived from the lifecycle so a fork that renames its stages, or adds
+ * one, gets the right list without editing this file.
+ */
+export const phaseStageIds = siteConfig.lifecycle
+  .filter((stage) => stage.windingDown !== true && stage.terminal !== true)
+  .map((stage) => stage.id);
+
+const PHASE_AUDIENCE_REQUIRED =
+  'A phase needs an audience — say who gets it in this phase, for example "Pilot teams" or "Everyone".';
+
+export const phaseSchema = z.object({
+  /** Distinguishes one phase from another on the page, e.g. "Phase 1 — pilot". */
+  name: z
+    .string({ error: 'A phase needs a name.' })
+    .min(1, { error: 'A phase needs a name.' })
+    .max(60, { error: 'Keep phase names under 60 characters — they sit in a narrow column.' }),
+  audience: z
+    .string({ error: PHASE_AUDIENCE_REQUIRED })
+    .min(1, { error: PHASE_AUDIENCE_REQUIRED })
+    .max(120, { error: 'Keep the audience to a short phrase, under 120 characters.' }),
+  status: enumOf(
+    phaseStageIds,
+    'A phase moves through the rollout, so its status cannot be a winding-down or terminal stage.',
+  ),
+  /** The phase's own dates. Optional — a phase may be declared before it is planned. */
+  timeline: timelineSchema().optional(),
+});
+
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const linkSchema = z.object({
@@ -139,12 +186,13 @@ export const streamlineSchema = z.object({
    * Stage -> date. Past dates are what happened, future dates are the plan.
    * Stages may be skipped; unknown stage names are rejected.
    */
-  timeline: z.strictObject(
-    Object.fromEntries(stageIds.map((id) => [id, dateSchema.optional()])) as Record<
-      string,
-      z.ZodOptional<typeof dateSchema>
-    >,
-  ),
+  timeline: timelineSchema(),
+  /**
+   * The audience-by-audience rollout, when the thing lands in waves rather
+   * than for everyone at once. Entirely optional, and independent of the
+   * fields above: `status` and `timeline` stay the streamline's own.
+   */
+  phases: z.array(phaseSchema).default([]),
   /** `team-slug/streamline-slug` of the streamline this one replaces. */
   supersedes: z
     .string()
@@ -159,5 +207,6 @@ export const streamlineSchema = z.object({
 export type TeamData = z.infer<typeof teamSchema>;
 export type StreamlineData = z.infer<typeof streamlineSchema>;
 export type UpdateData = z.infer<typeof updateSchema>;
+export type PhaseData = z.infer<typeof phaseSchema>;
 export type OwnerData = z.infer<typeof ownerSchema>;
 export type LinkData = z.infer<typeof linkSchema>;
