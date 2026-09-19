@@ -8,23 +8,24 @@
 # with "Require a pull request before merging" and "Require review from Code
 # Owners". Without that, this file is only a suggestion.
 #
-# Replace the handles below with your own teams — these are the demo ones and
-# they do not exist. See docs/adopting.md.
+# Every rule below is commented out, and the handles are placeholders. A handle
+# that does not exist in your organization is worse than no rule at all: GitHub
+# cannot resolve it, so the review it was meant to require is never requested
+# and the pull request looks approved-by-nobody instead of blocked. Uncomment as
+# you go, and replace every handle with one of your own.
+#
+# See docs/adopting.md, section 3.
 
-# The site itself — code, config, workflows, docs.
-*                                           @example-org/platform-maintainers
+# The site itself — code, config, workflows, docs. Keep this with whoever
+# maintains the fork, so a change to src/ needs them and a change to content/
+# does not.
+# *                                    @your-org/platform-maintainers
 
-# Team definitions and streamlines, owned by the teams they describe.
-/content/teams/devops.yaml                  @example-org/devops
-/content/streamlines/devops/                @example-org/devops
+# Then two lines per team: its own definition, and its streamlines.
+# /content/teams/devops.yaml           @your-org/devops
+# /content/streamlines/devops/         @your-org/devops
 
-/content/teams/developer-experience.yaml    @example-org/developer-experience
-/content/streamlines/developer-experience/  @example-org/developer-experience
-
-/content/teams/ai-platform.yaml             @example-org/ai-platform
-/content/streamlines/ai-platform/           @example-org/ai-platform
-
-/content/teams/internal-tools.yaml          @example-org/internal-tools
-/content/streamlines/internal-tools/        @example-org/internal-tools
+# /content/teams/data-platform.yaml    @your-org/data-platform
+# /content/streamlines/data-platform/  @your-org/data-platform
 
 # Adding a team is two lines here and one file in content/teams/.

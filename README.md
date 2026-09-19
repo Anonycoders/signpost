@@ -12,6 +12,8 @@ Signpost gives every team one file per effort. They edit it when the plan change
 
 ## What it looks like
 
+**[See it running →](https://anonycoders.github.io/signpost-sample/)** — a populated instance with four invented platform teams and thirteen streamlines, published from [`Anonycoders/signpost-sample`](https://github.com/Anonycoders/signpost-sample). This repository is the template that sample was made from, and it ships empty; the screenshots below are of the sample.
+
 **Roadmap** — every effort as a lane across six quarters, filterable by team, stage and category.
 
 | Light | Dark |
@@ -44,7 +46,7 @@ npm install
 npm run dev      # http://localhost:4321
 ```
 
-That runs the site with the demo content in `content/`, which is fictional and exists to show you the shape of a real instance. Delete it when you adopt this.
+`content/` ships empty, so that is an empty site — every page renders, and every page tells you what to add. Filling it is [docs/adopting.md](docs/adopting.md); the [sample](https://anonycoders.github.io/signpost-sample/) is where it ends up.
 
 Other scripts:
 
@@ -86,7 +88,7 @@ Edit, open a pull request, CODEOWNERS routes it to your team, CI validates it, m
 
 ## Running it for your own organization
 
-Fork it, edit one config file, replace the content. **[docs/adopting.md](docs/adopting.md)** walks through it: naming and branding, defining your own lifecycle stages and categories, wiring CODEOWNERS to your teams, deploying to GitHub Pages (including GitHub Enterprise), and what to do if your instance has Pages turned off.
+Fork it, edit one config file, add your content. **[docs/adopting.md](docs/adopting.md)** walks through it: naming and branding, defining your own lifecycle stages and categories, wiring CODEOWNERS to your teams, deploying to GitHub Pages (including GitHub Enterprise), and what to do if your instance has Pages turned off.
 
 Everything an organization needs to change lives in [`site.config.ts`](site.config.ts) — the stages, the categories, the impact levels, the colours, the attention windows. The rules follow the config: rename `deprecated` to `sunsetting` and the validator's messages, the filters and the roadmap legend all rename with it.
 

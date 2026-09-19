@@ -4,11 +4,13 @@ For someone whose team depends on platform work: you want to know what is about
 to change, when, and whether it lands on you. You are never going to edit a file
 in this repository, and you should not have to.
 
-This guide is written against the demo instance in this repository, whose
-configuration lives in [`site.config.ts`](../site.config.ts). Your organization
-may have renamed the lifecycle stages, the categories or the impact levels — the
-site reads those from config, so the labels you see may differ from the ones
-quoted here. The shapes and the rules do not.
+This guide is written against the sample instance at
+[anonycoders.github.io/signpost-sample](https://anonycoders.github.io/signpost-sample/),
+published from [`Anonycoders/signpost-sample`](https://github.com/Anonycoders/signpost-sample).
+It runs the lifecycle stages, categories and impact levels this project ships by
+default in [`site.config.ts`](../site.config.ts). Your organization may have
+renamed any of them — the site reads them from config, so the labels you see may
+differ from the ones quoted here. The shapes and the rules do not.
 
 If you want to *publish* something rather than read it, you want
 [CONTRIBUTING.md](../CONTRIBUTING.md) instead.
@@ -34,7 +36,7 @@ takes ten seconds to confirm.
 
 **"Needs your attention"** is the first section under the hero, and the only one
 that matters when you are in a hurry. The caption next to the heading spells out
-the window it covers: on the demo instance it reads
+the window it covers: on the sample it reads
 
 > Landing within 60 days, or landed in the last 30
 
@@ -49,7 +51,7 @@ What gets in:
   not from a streamline quietly moving between lifecycle stages. A stage
   transition with nothing written about it is on the roadmap and the changes
   page, not here.
-- **At or above an impact threshold.** With the demo instance's impact levels,
+- **At or above an impact threshold.** With the sample's impact levels,
   the threshold (`attentionWeight: 20`) means **Breaking** and **Action
   required** get in and **Info** does not. Teams cannot promote their own
   announcement into this strip by any means other than saying honestly that it
@@ -91,7 +93,7 @@ disagreeing with reality — nobody has posted.
 timeline, **grouped by team**, because the question people actually arrive with
 is "what is DevOps doing to me this quarter", not "what happens in November".
 
-The window is six quarters wide on the demo instance: the previous quarter, the
+The window is six quarters wide on the sample: the previous quarter, the
 current one, and the next four. The current quarter's header is bold.
 
 ### Bars
@@ -125,8 +127,8 @@ falls inside the window.
 
 Two more conventions:
 
-- Streamlines that have reached a terminal stage (**Retired**, on the demo
-  instance) are faded and sorted to the bottom of their team's group. They are
+- Streamlines that have reached a terminal stage (**Retired**, on the sample)
+  are faded and sorted to the bottom of their team's group. They are
   kept as a record, not hidden.
 - A lane reading **"No dates in this window"** is a streamline whose dates all
   fall outside the six quarters shown — usually something that finished long
@@ -214,7 +216,7 @@ announced.
 On a streamline's own page the same distinction appears on the update itself, as
 a "takes effect 1 October 2026" note next to the posting date.
 
-Announcements at the highest impact level — **Breaking**, on the demo instance —
+Announcements at the highest impact level — **Breaking**, on the sample —
 are tinted across the full width of the row and given a thick coloured left
 border, so one cannot be scrolled past by accident.
 
@@ -222,7 +224,7 @@ border, so one cannot be scrolled past by accident.
 
 ## Impact levels
 
-Every announcement carries exactly one badge. On the demo instance:
+Every announcement carries exactly one badge. On the sample:
 
 | Badge | What it means for you |
 | --- | --- |

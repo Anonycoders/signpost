@@ -19,17 +19,29 @@ change a label or a colour, something has gone wrong — open an issue upstream.
 ## 1. Fork and run it
 
 ```bash
-git clone https://github.com/<your-org>/signpost.git
-cd signpost
+git clone https://github.com/<your-org>/<your-fork>.git
+cd <your-fork>
 nvm use            # the Node version is pinned in .nvmrc
 npm install
 npm run dev        # http://localhost:4321
 ```
 
-You now have the demo site: four invented platform teams, thirteen
-streamlines covering every lifecycle stage. Keep it while you configure — it is
-much easier to see what a setting does with content on the page — and delete it
-in step 4.
+GitHub names a fork after the repository it came from, so `<your-fork>` is
+usually `signpost` — but rename it if `roadmap` or `platform-signpost` is what
+your organization will search for. Nothing in the project reads its own
+directory or repository name: the URL is `repository.url` in step 2, and the
+deployed path comes from Pages in step 5.
+
+You now have an empty site. It builds, every page renders, and every page tells
+you what to add — no teams, no streamlines, nothing on the roadmap. That is the
+intended starting point, and you fill it in step 4.
+
+To see a populated one while you configure, the sample instance is at
+[anonycoders.github.io/signpost-sample](https://anonycoders.github.io/signpost-sample/),
+from [`Anonycoders/signpost-sample`](https://github.com/Anonycoders/signpost-sample)
+— this same site with invented content left in: four platform teams, thirteen
+streamlines covering every lifecycle stage. Keeping it open in a tab, or cloned
+alongside, makes it much easier to see what a setting does.
 
 **Node.** `.nvmrc` pins the major version and `package.json` sets an `engines`
 floor; `.npmrc` turns on `engine-strict` so an old Node fails the install with
@@ -72,6 +84,14 @@ contact: {
 repository actually lives — GitHub Enterprise URLs work exactly the same as
 github.com ones. `contact` is the footer link for people whose question the
 site cannot answer; a chat channel URL is a good choice.
+
+The two are independent, and it is normal for them to point somewhere different
+from each other. The sample instance is the worked example: its `repository` is
+its own repository, so **Edit this page** opens the file the reader is actually
+looking at, while its `contact` is left pointing at this project's issue tracker,
+because a question about how Signpost behaves belongs upstream rather than in a
+site full of invented teams. Set `repository` to where your content lives, and
+`contact` to wherever the person asking will get an answer.
 
 ### Locale
 
@@ -168,30 +188,35 @@ teams merge their own updates and nobody waits on a central reviewer:
 /content/teams/devops.yaml                @your-org/devops
 ```
 
-Add two lines per team, using your GitHub Enterprise team handles. Then, in
-**Settings → Branches**, protect `main` with *Require a pull request before
-merging* and *Require review from Code Owners*. Without branch protection
-CODEOWNERS is only a suggestion.
+The shipped file is a skeleton: the pattern is there, but every rule is
+commented out and every handle is a placeholder, because a handle that does not
+resolve in your organization silently requires nobody. Uncomment the lines you
+want and put your own team handles in — GitHub Enterprise handles work the same
+way. Then, in **Settings → Branches**, protect `main` with *Require a pull
+request before merging* and *Require review from Code Owners*. Without branch
+protection CODEOWNERS is only a suggestion.
 
-Keep the code itself owned by whoever maintains the site — the shipped file
-does this with a catch-all at the top, so a change to `src/` needs the platform
-team while a change to `content/devops/` does not.
+Keep the code itself owned by whoever maintains the site. That is the catch-all
+at the top of the file, and it goes first precisely because the last matching
+rule wins: a change to `src/` needs the platform team, while a change to
+`content/streamlines/devops/` needs only DevOps.
 
 ---
 
-## 4. Replace the demo content
+## 4. Add your first team and streamline
 
-```bash
-rm -rf content/teams/* content/streamlines/*
-```
+`content/` arrives empty — `content/teams/` and `content/streamlines/` hold
+nothing but a `.gitkeep` so that Git carries the directories at all. Add one
+YAML file per team and one Markdown file per streamline, exactly as
+[CONTRIBUTING.md](../CONTRIBUTING.md) describes — that guide is written for your
+colleagues, and it is the same process for you.
 
-Then add one YAML file per team and one Markdown file per streamline, exactly
-as [CONTRIBUTING.md](../CONTRIBUTING.md) describes — that guide is written for
-your colleagues, and it is the same process for you.
-
-With `content/` empty, the site does not break: every page falls back to an
-empty state that tells the reader what to add. That is deliberate, so a fresh
-fork is a usable starting point rather than a wall of zeroes.
+Until you do, nothing is broken: every page falls back to an empty state that
+tells the reader what to add, the feeds are valid with no entries in them, and
+the validator passes with a single warning that no teams are defined yet. That
+is deliberate, so a fresh fork is a usable starting point rather than a wall of
+zeroes or a stack of errors. Start with one team file — the warning goes, the
+team page appears, and the shape of the thing becomes obvious.
 
 ```bash
 npm run validate   # content rules
@@ -225,20 +250,18 @@ no runtime to keep patched.
 
 ### URLs and the base path
 
-You do not hardcode your URL anywhere. `actions/configure-pages` reports where
-the site is about to be published, and the workflow passes that to the build:
+You do not hardcode your URL anywhere. `actions/configure-pages` asks GitHub
+where the site is about to be published, and the deploy workflow hands that
+straight to the build as two environment variables:
 
-```yaml
-- name: Configure Pages
-  id: pages
-  uses: actions/configure-pages@v5
-…
-- name: Build site
-  run: npm run build
-  env:
-    SITE_URL: ${{ steps.pages.outputs.origin }}
-    BASE_PATH: ${{ steps.pages.outputs.base_path }}
-```
+| Variable | Comes from |
+| --- | --- |
+| `SITE_URL` | the Pages origin the action reports |
+| `BASE_PATH` | the Pages base path the action reports |
+
+[`deploy.yml`](../.github/workflows/deploy.yml) is the authoritative copy of
+that wiring, including which version of the action it pins — read it there
+rather than trusting a snippet in a guide that nobody bumps.
 
 [`astro.config.mjs`](../astro.config.mjs) reads both, falling back to
 `http://localhost:4321` and `/` locally. This is what makes the same build work
