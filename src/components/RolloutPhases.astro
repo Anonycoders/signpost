@@ -1,0 +1,81 @@
+---
+import Badge from '@/components/Badge.astro';
+import { formatDateShort } from '@/lib/date';
+import { phaseEmphasis, type Phase } from '@/lib/phases';
+
+/**
+ * The audience-by-audience rollout, as a tracker a reader can find themselves
+ * in.
+ *
+ * The question this answers is not "how far along is this" — the stage stepper
+ * above already says that — but "has it reached me yet". So every row leads
+ * with who, and the stage is the answer rather than the subject.
+ *
+ * Emphasis is presentational only: the stage badge carries the same fact in
+ * words on every row, so nothing is lost when the tint is not perceived.
+ * `aria-current` gives a screen reader the same steer the tint gives everyone
+ * else.
+ */
+interface Props {
+  phases: Phase[];
+}
+
+const { phases } = Astro.props;
+
+const emphasis = phaseEmphasis(phases);
+const rows = phases.map((phase, index) => ({ phase, emphasis: emphasis[index]! }));
+
+const active = rows.find((row) => row.emphasis === 'active');
+const landed = rows.filter((row) => row.emphasis === 'complete').length;
+---
+
+<section aria-labelledby="phases-heading">
+  <h2 id="phases-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+    Rollout phases
+  </h2>
+  <p class="mt-1.5 text-sm text-ink-secondary">
+    {
+      active
+        ? `Currently reaching ${active.phase.audience}.`
+        : `All ${landed} phase${landed === 1 ? '' : 's'} have landed.`
+    }
+  </p>
+
+  <div class="mt-5 overflow-hidden rounded-card border border-border bg-surface">
+    <ul class="divide-y divide-border">
+      {
+        rows.map(({ phase, emphasis: weight }) => (
+          <li
+            class:list={[
+              'px-5 py-4 sm:px-6',
+              weight === 'complete' && 'opacity-55',
+              weight === 'active' && 'bg-surface-muted',
+            ]}
+            aria-current={weight === 'active' ? 'step' : undefined}
+          >
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-ink">{phase.audience}</p>
+                <p class="mt-0.5 text-xs text-ink-muted">{phase.name}</p>
+              </div>
+              <Badge tone={phase.stage.tone} dot title={phase.stage.description}>
+                {phase.stage.label}
+              </Badge>
+            </div>
+
+            {phase.timeline.length > 0 && (
+              <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
+                {phase.timeline.map((entry) => (
+                  <div class="flex gap-1.5">
+                    <dt class="text-ink-muted">{entry.stage.label}</dt>
+                    <dd class="text-ink-secondary">{formatDateShort(entry.date)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

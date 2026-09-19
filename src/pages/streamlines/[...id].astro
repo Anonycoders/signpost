@@ -5,6 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import Badge from '@/components/Badge.astro';
 import Callout from '@/components/Callout.astro';
+import RolloutPhases from '@/components/RolloutPhases.astro';
 import StageStepper from '@/components/StageStepper.astro';
 import UpdateEntry from '@/components/UpdateEntry.astro';
 import {
@@ -168,6 +169,13 @@ const related = [
             }
           </div>
         </section>
+
+        {/*
+          Above the prose, with the stepper: "has it reached my team yet" is
+          something a reader acts on, and the page puts everything actionable
+          ahead of the author's own writing.
+        */}
+        {streamline.phases.length > 0 && <RolloutPhases phases={streamline.phases} />}
 
         {
           hasBody && (
