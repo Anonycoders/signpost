@@ -35,7 +35,7 @@ const attention = needsAttention(
   siteConfig.recentWindowDays,
 );
 
-/** A fresh fork with the demo content deleted needs telling what to do next. */
+/** A fresh fork has no content yet, and needs telling what to do next. */
 const hasContent = streamlines.length > 0;
 
 const LATEST_UPDATE_COUNT = 5;
@@ -115,9 +115,9 @@ const stats = [
 
     {
       /*
-       * A fork with the demo content removed lands here first. Telling the
-       * person who just cloned it what to do next is more useful than three
-       * sections of zeroes.
+       * A fresh fork lands here first, before anyone has written a file.
+       * Telling the person who just cloned it what to do next is more useful
+       * than three sections of zeroes.
        */
       !hasContent && (
         <section class="border-t border-border py-10 pb-16">

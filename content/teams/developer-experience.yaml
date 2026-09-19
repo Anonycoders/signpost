@@ -1,8 +1,0 @@
-name: Developer Experience
-mission: >-
-  Makes the day-to-day of building software here fast and boring: project
-  templates, local environments, build times and the tools in between.
-channel: "#devex"
-links:
-  - label: Getting started guide
-    url: https://github.com/example-org/devex-handbook

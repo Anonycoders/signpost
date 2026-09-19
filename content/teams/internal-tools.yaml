@@ -1,8 +1,0 @@
-name: Internal Tools
-mission: >-
-  Builds and maintains the systems everyone uses to find things: service
-  ownership, documentation, data discovery and internal search.
-channel: "#internal-tools"
-links:
-  - label: Tool directory
-    url: https://github.com/example-org/internal-tools
