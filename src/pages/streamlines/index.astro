@@ -20,9 +20,18 @@ const ordered = [...streamlines].sort((a, b) => {
   title="Streamlines"
   description="Every product, initiative and migration the platform teams own."
 >
+  {/*
+    The filters are not rendered with nothing to filter, so the sentence that
+    points at them goes too — otherwise the page describes a control that is
+    not on it.
+  */}
   <PageHeader
     title="Streamlines"
-    lede="Every product, initiative and migration the platform teams own. Filter by team, category or stage to find what you need."
+    lede={
+      ordered.length > 0
+        ? 'Every product, initiative and migration the platform teams own. Filter by team, category or stage to find what you need.'
+        : 'Every product, initiative and migration the platform teams own.'
+    }
   />
 
   <Container>

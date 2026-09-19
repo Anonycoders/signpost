@@ -41,9 +41,17 @@ const total = groups.reduce((count, group) => count + group.lanes.length, 0);
   title="Roadmap"
   description="Every platform streamline on one timeline, so you can see what lands when."
 >
+  {/*
+    The second sentence explains how to read the bars, so it goes when there are
+    none. An empty page should not describe machinery the reader cannot see.
+  */}
   <PageHeader
     title="Roadmap"
-    lede="Every platform streamline on one timeline, grouped by team. Bars show the lifecycle stages each effort moves through; hatched bars and diamonds are still planned."
+    lede={
+      total > 0
+        ? 'Every platform streamline on one timeline, grouped by team. Bars show the lifecycle stages each effort moves through; hatched bars and diamonds are still planned.'
+        : 'Every platform streamline on one timeline, grouped by team.'
+    }
     width="wide"
   />
 
@@ -53,29 +61,36 @@ const total = groups.reduce((count, group) => count + group.lanes.length, 0);
         <Filters teams={teams} total={total} showSearch={false} />
       </div>
 
-      {/* Colour is doing real work on this page, so it gets a key. */}
-      <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-secondary">
-        {
-          siteConfig.lifecycle.map((stage) => (
-            <span class="inline-flex items-center gap-1.5" title={stage.description}>
-              <span class={`h-2 w-4 rounded-full ${toneSolidClass[stage.tone]}`} aria-hidden="true" />
-              {stage.label}
-            </span>
-          ))
-        }
-        <span class="inline-flex items-center gap-1.5">
-          <span class="legend-planned h-2 w-4 rounded-full bg-ink-muted" aria-hidden="true"></span>
-          Planned
-        </span>
-        {
-          window.todayPct !== null && (
+      {/*
+        Colour is doing real work on this page, so it gets a key — but only once
+        there are bars to read it against. A legend above an empty grid explains
+        nothing and reads as a wall of labels on a fork's first build.
+      */}
+      {
+        total > 0 && (
+          <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-secondary">
+            {siteConfig.lifecycle.map((stage) => (
+              <span class="inline-flex items-center gap-1.5" title={stage.description}>
+                <span
+                  class={`h-2 w-4 rounded-full ${toneSolidClass[stage.tone]}`}
+                  aria-hidden="true"
+                />
+                {stage.label}
+              </span>
+            ))}
             <span class="inline-flex items-center gap-1.5">
-              <span class="h-3 w-px bg-accent" aria-hidden="true" />
-              Today, {formatDate(now)}
+              <span class="legend-planned h-2 w-4 rounded-full bg-ink-muted" aria-hidden="true" />
+              Planned
             </span>
-          )
-        }
-      </div>
+            {window.todayPct !== null && (
+              <span class="inline-flex items-center gap-1.5">
+                <span class="h-3 w-px bg-accent" aria-hidden="true" />
+                Today, {formatDate(now)}
+              </span>
+            )}
+          </div>
+        )
+      }
 
       {
         total === 0 ? (

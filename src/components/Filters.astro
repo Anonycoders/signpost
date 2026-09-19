@@ -17,6 +17,12 @@ import type { Team } from '@/lib/content';
  * the roadmap's lanes and the catalog's cards can share one implementation.
  * Containers marked `data-group` hide themselves when nothing inside them
  * survives, so the roadmap does not leave behind empty team headings.
+ *
+ * With nothing to filter, the whole control renders nothing. A fresh fork has
+ * no streamlines, and a search box over zero results, three selects that cannot
+ * change anything and the line "Showing all 0 streamlines" are a worse first
+ * impression than the page simply saying what to add. The page's own empty
+ * state says that, so this stays out of its way.
  */
 interface Props {
   teams: Team[];
@@ -52,65 +58,67 @@ const selects = [
 ];
 ---
 
-<form
-  id="filters"
-  class="flex flex-col gap-4 rounded-card border border-border bg-surface p-4 sm:flex-row sm:items-end"
-  role="search"
-  aria-label="Filter streamlines"
-  onsubmit="return false"
->
-  {
-    showSearch && (
-      <div class="flex-1">
-        <label for="filter-search" class="mb-1.5 block text-xs font-medium text-ink-secondary">
-          Search
-        </label>
-        <input
-          type="search"
-          id="filter-search"
-          name="q"
-          placeholder="Title, summary, owner…"
-          autocomplete="off"
-          class="w-full rounded-badge border border-border bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
-        />
-      </div>
-    )
-  }
+{
+  total > 0 && (
+    <Fragment>
+      <form
+        id="filters"
+        class="flex flex-col gap-4 rounded-card border border-border bg-surface p-4 sm:flex-row sm:items-end"
+        role="search"
+        aria-label="Filter streamlines"
+        onsubmit="return false"
+      >
+        {showSearch && (
+          <div class="flex-1">
+            <label for="filter-search" class="mb-1.5 block text-xs font-medium text-ink-secondary">
+              Search
+            </label>
+            <input
+              type="search"
+              id="filter-search"
+              name="q"
+              placeholder="Title, summary, owner…"
+              autocomplete="off"
+              class="w-full rounded-badge border border-border bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
+            />
+          </div>
+        )}
 
-  {!showSearch && <div class="flex-1" />}
+        {!showSearch && <div class="flex-1" />}
 
-  {
-    selects.map((select) => (
-      <div class="sm:w-44">
-        <label for={select.id} class="mb-1.5 block text-xs font-medium text-ink-secondary">
-          {select.label}
-        </label>
-        <select
-          id={select.id}
-          name={select.param}
-          class="w-full rounded-badge border border-border bg-canvas px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+        {selects.map((select) => (
+          <div class="sm:w-44">
+            <label for={select.id} class="mb-1.5 block text-xs font-medium text-ink-secondary">
+              {select.label}
+            </label>
+            <select
+              id={select.id}
+              name={select.param}
+              class="w-full rounded-badge border border-border bg-canvas px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+            >
+              <option value="">All</option>
+              {select.options.map((option) => (
+                <option value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          id="filter-reset"
+          class="hidden rounded-badge border border-border px-3 py-2 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink"
         >
-          <option value="">All</option>
-          {select.options.map((option) => (
-            <option value={option.value}>{option.label}</option>
-          ))}
-        </select>
-      </div>
-    ))
-  }
+          Clear
+        </button>
+      </form>
 
-  <button
-    type="button"
-    id="filter-reset"
-    class="hidden rounded-badge border border-border px-3 py-2 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink"
-  >
-    Clear
-  </button>
-</form>
-
-<p class="mt-4 text-sm text-ink-secondary" id="filter-count" aria-live="polite">
-  Showing all {total} streamlines
-</p>
+      <p class="mt-4 text-sm text-ink-secondary" id="filter-count" aria-live="polite">
+        Showing all {total} streamline{total === 1 ? '' : 's'}
+      </p>
+    </Fragment>
+  )
+}
 
 <script>
   const form = document.getElementById('filters') as HTMLFormElement | null;
