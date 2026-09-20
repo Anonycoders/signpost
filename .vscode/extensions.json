@@ -1,0 +1,7 @@
+{
+  // redhat.vscode-yaml is the one that matters: without it the schema mapping
+  // in settings.json does nothing, and a contributor writing a streamline gets
+  // a plain text editor. astro-build.astro-vscode is for working on the site
+  // itself and is no use to someone only publishing content.
+  "recommendations": ["redhat.vscode-yaml", "astro-build.astro-vscode"]
+}

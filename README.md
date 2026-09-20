@@ -98,7 +98,7 @@ Everything an organization needs to change lives in [`site.config.ts`](site.conf
 
 **Git is the database.** There is no CMS, no admin login, no runtime. `content/` is the source of truth; the site is a pure function of it. Reviewing a roadmap change is reviewing a diff, and the history of what a team promised is `git log`.
 
-**The build is the gatekeeper.** `scripts/content-rules.ts` holds the rules, shared between the CLI validator and the Astro build via one set of Zod schemas, so CI and your editor cannot disagree. Errors block the merge; softer things (a streamline nobody has updated in a long time) warn.
+**The build is the gatekeeper.** `scripts/content-rules.ts` holds the rules, shared between the CLI validator and the Astro build via one set of Zod schemas, so CI and your editor cannot disagree. Errors block the merge; softer things (a streamline nobody has updated in a long time) warn. The same schemas generate the JSON Schema in `schemas/`, so an editor offers the field names — and *your* stage names, not ours — while somebody is still typing.
 
 **Feeds, so nobody has to remember to look.** A site-wide Atom feed at `/feed.xml` and one per team, hand-built to Atom 1.0 (RFC 4287) with stable entry IDs — so a feed reader, a Slack integration or a Teams connector can subscribe once and get every announcement.
 
@@ -115,6 +115,7 @@ content/
   teams/<slug>.yaml               one file per team
   streamlines/<team>/<slug>.yaml  one file per effort
 site.config.ts                    everything an organization changes
+schemas/                          generated from site.config.ts, for editors
 src/
   pages/                          routes
   lib/                            roadmap, changes, timeline, feeds — unit-tested
@@ -122,6 +123,7 @@ src/
 scripts/
   content-rules.ts                the validation rules
   validate-content.ts             the CLI wrapper CI runs
+  json-schema.ts                  regenerates schemas/ from the Zod schemas
   announcements.ts                what is worth announcing — pure, no IO
   announce.ts                     the CLI that reads, posts and records
 .github/

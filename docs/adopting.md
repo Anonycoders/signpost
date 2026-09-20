@@ -172,6 +172,19 @@ Impact levels carry one extra field:
 Anything at or above `attentionWeight` reaches the home page strip and the
 summary line on streamline cards.
 
+### After renaming any of those, run `npm run schema`
+
+```bash
+npm run schema     # rewrites schemas/, then commit it
+```
+
+`schemas/` is what a contributor's editor reads to offer them field names and
+stage names as they type, and it is generated from the three lists above.
+Regenerate it and commit the result whenever you change them, or everyone
+writing content keeps being offered a stage that no longer exists. CI checks
+this for you: the `--check` step in `ci.yml` fails on a stale `schemas/` and
+tells you the command to run.
+
 ### Tuning the noise
 
 ```ts

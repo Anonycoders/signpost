@@ -47,6 +47,7 @@ the one this repository is built and tested against.
 | --- | --- | --- |
 | `npm run dev` | `astro dev` | Nothing — hot reload, content included. |
 | `npm run validate` | `tsx scripts/validate-content.ts` | The content rules. Fast, no build, and the first thing CI reports. |
+| `npm run schema` | `tsx scripts/json-schema.ts` | Nothing — rewrites `schemas/` from the Zod schemas. Add `-- --check` and it gates instead: CI fails if what is committed is stale. |
 | `npm run check` | `astro check` | TypeScript and Astro diagnostics, including inside `.astro` files. |
 | `npm run test` | `vitest run` | The unit tests in `src/lib/*.test.ts` and `scripts/*.test.ts`. |
 | `npm run build` | `npm run validate && astro build` | The content rules, then a real production build into `dist/`. It does **not** run `astro check` or the tests, so a green build is not a green gate. |
@@ -57,7 +58,7 @@ the one this repository is built and tested against.
 a pull request:
 
 ```bash
-npm run validate && npm run check && npm run test && npm run build
+npm run validate && npm run schema -- --check && npm run check && npm run test && npm run build
 ```
 
 `npm run test:watch` is the same vitest in watch mode while you work.
@@ -253,6 +254,45 @@ not, because under `tsx` it is resolved against the current directory rather
 than the repo root. Keep them relative when you edit anything in `scripts/`, and
 remember that a change there has to satisfy `npm run validate` as well as
 `npm run build`.
+
+### The third reader is the editor
+
+Both layers tell a contributor what is wrong after they have written it.
+[`scripts/json-schema.ts`](../scripts/json-schema.ts) converts the layer-1 Zod
+schemas to JSON Schema in `schemas/`, which is what tells them while they are
+typing. `npm run schema` regenerates it; `.vscode/settings.json` attaches it to
+`content/`, and CONTRIBUTING has the modeline for everything else.
+
+Three things about it are deliberate, and each one is load-bearing:
+
+**It is generated.** The interesting fields — `status`, `category`, `impact` —
+enumerate ids from `site.config.ts`. A fork that renames `deprecated` to
+`sunsetting` gets a schema offering `sunsetting`. A hand-written schema would
+have gone on suggesting a value the validator rejects, in a tooltip that looks
+authoritative, which is worse than offering nothing at all.
+
+**The output is committed.** An editor reads files from the working tree the
+moment a repository is opened; nothing runs a build step first. A `schemas/`
+that only existed after `npm run schema` would be missing exactly when it is
+wanted. So CI runs `npm run schema -- --check` and fails on drift — that step
+exists because the generated-and-committed pair is otherwise only as fresh as
+whoever last remembered.
+
+**Dates are collapsed to one string.** `dateSchema` is a union of `Date` and
+`string`, because YAML hands over an unquoted `2026-01-15` already parsed.
+Emitting that union tells an editor a date field accepts any string at all,
+which is the one thing it must not say. So `dateSchema` carries
+`.meta({ id: 'calendar-date' })` and the generator's `override` swaps the whole
+union for a `YYYY-MM-DD` pattern. Two things to know if you touch that callback:
+`z.toJSONSchema` throws on a `Date` before `override` ever runs, hence
+`unrepresentable: 'any'`; and what `override` is handed is Zod's *core* schema,
+which has no `.meta()` — read the id back with `z.globalRegistry.get()`.
+
+If you add a field to `src/lib/schema.ts`, give it a `.describe()`. That string
+is the hover text a contributor reads, and a test in
+[`scripts/json-schema.test.ts`](../scripts/json-schema.test.ts) fails if a field
+arrives without one. Then run `npm run schema` and commit `schemas/` alongside
+it.
 
 ---
 
@@ -486,10 +526,13 @@ one layer when it parses the document and the other when it renders the markup.
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on every pull
 request and on pushes to `main`: checkout, `setup-node` with
-`node-version-file: .nvmrc` and npm caching, `npm ci`, then **validate → check →
-test → build**, in that order. Content is validated first on purpose, so that a
-content mistake is reported as a content mistake rather than surfacing as a type
-error or a build failure three steps later. Concurrency is keyed on the ref with
+`node-version-file: .nvmrc` and npm caching, `npm ci`, then **validate → schema
+→ check → test → build**, in that order. Content is validated first on purpose,
+so that a content mistake is reported as a content mistake rather than surfacing
+as a type error or a build failure three steps later. The schema step is
+`npm run schema -- --check`, and it fails if `schemas/` no longer matches what
+`site.config.ts` and `src/lib/schema.ts` would produce — see
+[the third reader is the editor](#the-third-reader-is-the-editor). Concurrency is keyed on the ref with
 `cancel-in-progress: true`, so pushing again supersedes the previous run.
 
 ## Deploy

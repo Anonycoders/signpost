@@ -26,4 +26,7 @@ state/
 .DS_Store
 .vscode/*
 !.vscode/extensions.json
+# Committed: it is what attaches schemas/ to content/, which is the whole
+# reason a contributor gets completion in a streamline file.
+!.vscode/settings.json
 .idea/

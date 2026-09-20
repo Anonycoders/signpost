@@ -11,8 +11,10 @@ Two things you might be here to do:
 - **[Add a streamline](#add-a-streamline)** — put a new product, initiative or
   migration on the roadmap. Five minutes, one new file.
 
-You do not need to run anything locally for either. If you would rather see it
-before you push, see [Preview it locally](#preview-it-locally).
+You do not need to run anything locally for either. If you edit these files
+often, [your editor can fill them in for you](#let-your-editor-fill-it-in-for-you);
+if you would rather see the page before you push, see
+[Preview it locally](#preview-it-locally).
 
 ---
 
@@ -388,6 +390,45 @@ error content/streamlines/devops/jenkins-pipelines.yaml
 
 Nothing in the validator cares about prose. It cannot tell you that your update
 is vague, so that part is on you and your reviewer.
+
+---
+
+## Let your editor fill it in for you
+
+Worth the two minutes if you write content more than once. Open the repository
+in VS Code and accept the extension recommendation it offers you — that is the
+[YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml),
+and once it is installed a streamline file starts completing itself. `Ctrl-Space`
+lists the fields that exist. A stage name you half-remember gets offered in
+full. A date in the wrong format is underlined while you type it, not three
+minutes later in CI.
+
+The lists it offers are **this** repository's, not the ones Signpost ships with.
+They are generated from `site.config.ts` into `schemas/`, so if your
+organization renamed a stage or added a category, that is what you are offered.
+
+If you use something other than VS Code, anything that speaks
+[yaml-language-server](https://github.com/redhat-developer/yaml-language-server)
+— Neovim, Helix, Zed, the JetBrains IDEs — gets the same thing from a comment on
+the first line of the file:
+
+```yaml
+# yaml-language-server: $schema=../../../schemas/streamline.schema.json
+```
+
+Three levels up from `content/streamlines/<team>/`, two from a team file in
+`content/teams/`:
+
+```yaml
+# yaml-language-server: $schema=../../schemas/team.schema.json
+```
+
+None of this replaces `npm run validate`. The schema knows the shape and the
+vocabulary — which fields exist, which values are allowed, what a date looks
+like. It does not know the rules that need to look at the rest of the file, like
+a `status:` that has fallen behind a date in its own timeline. Nor does any of
+it reach you when you edit a file through GitHub in the browser, which is a
+perfectly good way to post an update; CI is still what has the last word.
 
 ---
 

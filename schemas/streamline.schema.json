@@ -1,0 +1,291 @@
+{
+  "$id": "https://github.com/Anonycoders/signpost/schemas/streamline.schema.json",
+  "title": "Signpost streamline",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "What this effort is called. Under 80 characters — it has to fit on a card."
+    },
+    "team": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "The owning team slug. It must match both a file in content/teams/ and the directory this file is in — that is what wires up ownership and review."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "developer-experience",
+        "ai",
+        "infrastructure",
+        "internal-tooling",
+        "security",
+        "data"
+      ],
+      "description": "Which kind of work this is. Drives the filters on the roadmap and the catalog."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "in-development",
+        "rolling-out",
+        "generally-available",
+        "deprecated",
+        "retired"
+      ],
+      "description": "The stage it is in today. It needs a matching date in the timeline."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 220,
+      "description": "One sentence: what this is, and who it affects. 10 to 220 characters, because it has to fit on a card."
+    },
+    "owners": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The person’s name, as colleagues would say it. The only required field."
+          },
+          "github": {
+            "description": "Username on your GitHub or GitHub Enterprise instance, without the @ or a URL.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$"
+          },
+          "email": {
+            "description": "An address a reader can write to.",
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "slack": {
+            "description": "Slack handle, without the @ or a URL. This is what the page shows. On its own it is plain text — add slackId to make it a link.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+          },
+          "slackId": {
+            "description": "Slack member ID, U024BE7LH. In Slack: open the profile, then More → Copy member ID. It never appears on the page — it is what turns the handle into a link.",
+            "type": "string",
+            "pattern": "^[UW][A-Z0-9]{6,20}$"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "description": "Who to ask about this. At least one, and name is the only required part."
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "proposed": {
+          "$ref": "#/$defs/calendar-date"
+        },
+        "in-development": {
+          "$ref": "#/$defs/calendar-date"
+        },
+        "rolling-out": {
+          "$ref": "#/$defs/calendar-date"
+        },
+        "generally-available": {
+          "$ref": "#/$defs/calendar-date"
+        },
+        "deprecated": {
+          "$ref": "#/$defs/calendar-date"
+        },
+        "retired": {
+          "$ref": "#/$defs/calendar-date"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Stage to date. Past dates are what happened, future dates are the plan. Skip stages freely; unknown stage names are rejected."
+    },
+    "phases": {
+      "description": "The audience-by-audience rollout, when the thing lands in waves rather than for everyone at once. Independent of status and timeline above, which stay the streamline’s own.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "What this phase is called, for example \"Phase 1 — pilot\". Under 60 characters."
+          },
+          "audience": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "Who gets it in this phase, for example \"Pilot teams\" or \"Everyone\"."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "in-development",
+              "rolling-out",
+              "generally-available"
+            ],
+            "description": "Where this phase is today. A phase rolls out; it never deprecates."
+          },
+          "timeline": {
+            "description": "This phase's own dates. Optional — a phase may be named before it is planned.",
+            "type": "object",
+            "properties": {
+              "proposed": {
+                "$ref": "#/$defs/calendar-date"
+              },
+              "in-development": {
+                "$ref": "#/$defs/calendar-date"
+              },
+              "rolling-out": {
+                "$ref": "#/$defs/calendar-date"
+              },
+              "generally-available": {
+                "$ref": "#/$defs/calendar-date"
+              },
+              "deprecated": {
+                "$ref": "#/$defs/calendar-date"
+              },
+              "retired": {
+                "$ref": "#/$defs/calendar-date"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "audience",
+          "status"
+        ]
+      }
+    },
+    "supersedes": {
+      "description": "team-slug/streamline-slug of the streamline this one replaces.",
+      "type": "string",
+      "pattern": "^[a-z0-9-]+\\/[a-z0-9-]+$"
+    },
+    "announceChannel": {
+      "description": "Send this one's announcements somewhere other than its team's channel. For the one thing that matters to a different audience than everything else the team owns.",
+      "type": "string",
+      "pattern": "^(#[a-z0-9][a-z0-9._-]{0,79}|[CGD][A-Z0-9]{6,20})$"
+    },
+    "announce": {
+      "description": "Set to false to keep this one out of the chat announcements. Its changes are still recorded as seen, so turning it back on later says nothing about the months it was off.",
+      "type": "boolean"
+    },
+    "links": {
+      "description": "Migration guides, dashboards, docs — whatever a reader needs next.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the link says on the page, for example \"Migration guide\"."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The full URL, starting with http:// or https://."
+          }
+        },
+        "required": [
+          "label",
+          "url"
+        ]
+      }
+    },
+    "body": {
+      "description": "The long explanation, in Markdown, shown under the timeline: why this is happening and what a reader has to do. Written as a block scalar: body: | — and optional. A page with nothing under the timeline is a complete page.",
+      "type": "string"
+    },
+    "updates": {
+      "description": "The running log of announcements. Newest first, and never edited away.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "description": "The day you are posting this. Updates appear on the streamline page in this order.",
+            "$ref": "#/$defs/calendar-date"
+          },
+          "effective": {
+            "description": "The day the change lands on other people, when that is not the day you posted it. A deprecation announced in September that takes effect in November is date: 2026-09-10, effective: 2026-11-02. Leave it out when the change is already live.",
+            "$ref": "#/$defs/calendar-date"
+          },
+          "status": {
+            "description": "The stage the streamline was in when this happened. Worked out from the timeline if you leave it out.",
+            "type": "string",
+            "enum": [
+              "proposed",
+              "in-development",
+              "rolling-out",
+              "generally-available",
+              "deprecated",
+              "retired"
+            ]
+          },
+          "impact": {
+            "type": "string",
+            "enum": [
+              "breaking",
+              "action-required",
+              "info"
+            ],
+            "description": "How much this matters to a reader. Be honest: everything else on the site is driven by it."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "One line saying what changed. Under 120 characters — put the detail in the body."
+          },
+          "body": {
+            "description": "Markdown. What changes, when, and what the reader has to do — in the first two sentences. Written as a block scalar: body: |",
+            "type": "string"
+          },
+          "announcement": {
+            "description": "What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "date",
+          "impact",
+          "title"
+        ]
+      }
+    }
+  },
+  "required": [
+    "title",
+    "team",
+    "category",
+    "status",
+    "summary",
+    "owners",
+    "timeline"
+  ],
+  "$defs": {
+    "calendar-date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "A calendar date, written YYYY-MM-DD. For example 2026-03-01."
+    }
+  }
+}

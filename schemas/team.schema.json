@@ -1,0 +1,55 @@
+{
+  "$id": "https://github.com/Anonycoders/signpost/schemas/team.schema.json",
+  "title": "Signpost team",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The team name as the organization says it, for example \"DevOps\"."
+    },
+    "mission": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 300,
+      "description": "A sentence or two saying what this team owns. Shown on the team page."
+    },
+    "channel": {
+      "description": "Where to reach the team — a chat channel, a mailing list, whatever people actually use. Printed on the team page for a human to read.",
+      "type": "string"
+    },
+    "announceChannel": {
+      "description": "Where this team's changes are announced, if the site announces at all. Outbound, and read by a machine — usually a channel the teams who depend on this one are in, not the channel this team works in. Falls back to the site-wide channel.",
+      "type": "string",
+      "pattern": "^(#[a-z0-9][a-z0-9._-]{0,79}|[CGD][A-Z0-9]{6,20})$"
+    },
+    "links": {
+      "description": "Runbooks, dashboards, docs — anything a reader of the team page should have.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the link says on the page, for example \"Migration guide\"."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The full URL, starting with http:// or https://."
+          }
+        },
+        "required": [
+          "label",
+          "url"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "mission"
+  ]
+}

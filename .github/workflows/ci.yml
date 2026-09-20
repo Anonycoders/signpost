@@ -35,6 +35,14 @@ jobs:
       - name: Validate content
         run: npm run validate
 
+      # The schemas in schemas/ are generated from site.config.ts and committed,
+      # because an editor reads them from the working tree with no build step in
+      # between. A fork that renames a stage and forgets to regenerate would go
+      # on offering the old name to everyone writing content, and nothing else
+      # here would notice.
+      - name: Check the editor schemas are current
+        run: npm run schema -- --check
+
       - name: Type-check
         run: npm run check
 

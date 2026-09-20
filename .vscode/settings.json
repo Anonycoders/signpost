@@ -1,0 +1,16 @@
+{
+  // Attaches the generated schemas to the content files, which is what gives a
+  // contributor field completion, inline errors and hover text as they type —
+  // including the stage and category names from this fork's own site.config.ts.
+  //
+  // Needs the YAML extension in extensions.json. Editors that use the same
+  // language server but not these settings (Neovim, Zed, JetBrains) read a
+  // modeline instead; CONTRIBUTING.md has the line to paste.
+  "yaml.schemas": {
+    "./schemas/streamline.schema.json": "content/streamlines/*/*.yaml",
+    "./schemas/team.schema.json": "content/teams/*.yaml"
+  },
+  "files.associations": {
+    "content/**/*.yaml": "yaml"
+  }
+}
