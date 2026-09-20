@@ -16,6 +16,7 @@
     "validate": "tsx scripts/validate-content.ts",
     "schema": "tsx scripts/json-schema.ts",
     "announce": "tsx scripts/announce.ts",
+    "release-notes": "tsx scripts/changelog.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
