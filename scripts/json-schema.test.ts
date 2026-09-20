@@ -24,6 +24,26 @@ const streamline = schemas['streamline.schema.json'];
 const team = schemas['team.schema.json'];
 
 describe('the committed files', () => {
+  /**
+   * Comments are not JSON, however many editors quietly accept them. VS Code
+   * parses its own `.vscode/*.json` leniently and would never complain, so the
+   * day one of those files grows a `//` the only thing that notices is whatever
+   * else tries to read it — which by then is someone else's tooling, not ours.
+   */
+  it('are JSON, in every file this repository ships as JSON', () => {
+    const files = [
+      'package.json',
+      'tsconfig.json',
+      '.vscode/settings.json',
+      '.vscode/extensions.json',
+      ...generate().map((one) => `schemas/${one.file}`),
+    ];
+
+    for (const file of files) {
+      expect(() => JSON.parse(readFileSync(join(ROOT, file), 'utf8')), file).not.toThrow();
+    }
+  });
+
   it('match what the generator produces', () => {
     // If this fails, `npm run schema` was not run after a change to the
     // schemas or to site.config.ts — which is exactly what CI checks too.

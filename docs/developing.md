@@ -264,7 +264,12 @@ typing. `npm run schema` regenerates it. A content file reaches its schema
 through the `# yaml-language-server: $schema=…` comment on its own first line,
 which works in any editor running that language server;
 `.vscode/settings.json` maps the same schemas by path as a backstop for a file
-written without it.
+written without it. Both routes go through the same language server, so in VS
+Code both need `redhat.vscode-yaml` — which is why it is the first entry in
+`.vscode/extensions.json`, ahead of `astro-build.astro-vscode`, which matters
+for working on the site but not for writing content. Neither of those two files
+carries comments: they are committed JSON and the rest of the repository's JSON
+parses as JSON.
 
 Three things about it are deliberate, and each one is load-bearing:
 

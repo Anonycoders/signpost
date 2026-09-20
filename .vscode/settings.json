@@ -1,12 +1,4 @@
 {
-  // A backstop, not the mechanism. Every content file names its own schema on
-  // its first line — `# yaml-language-server: $schema=…` — which is what gives
-  // a contributor completion and inline errors in any editor that speaks the
-  // language server, not only this one. This mapping covers the file that was
-  // written from scratch without that line.
-  //
-  // Either way it needs the YAML extension in extensions.json; without it
-  // neither the modeline nor this does anything at all.
   "yaml.schemas": {
     "./schemas/streamline.schema.json": "content/streamlines/*/*.yaml",
     "./schemas/team.schema.json": "content/teams/*.yaml"
