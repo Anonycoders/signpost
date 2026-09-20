@@ -68,6 +68,52 @@ export interface ImpactLevel {
   weight: number;
 }
 
+/**
+ * Announcing changes in chat, for the people who will never visit the site.
+ *
+ * Leave this out and the feature does not exist: nothing is scheduled, nothing
+ * is posted, and the workflow that would do it exits without doing anything.
+ * Fill it in and `.github/workflows/announce.yml` starts posting changes to
+ * Slack on the schedule you give it. The bot token is a repository secret named
+ * `SLACK_BOT_TOKEN` and never belongs in this file.
+ */
+export interface AnnouncementConfig {
+  /**
+   * The site's public address, including any base path — for example
+   * `https://acme.github.io/signpost`, or `https://roadmap.acme.com`.
+   *
+   * Written out here rather than derived, because the announcer is a plain
+   * Node script: there is no Astro build around it, so neither the `site` from
+   * astro.config nor `import.meta.env.BASE_URL` exists when it runs. Every
+   * announcement links back here, so an announcement with no address would be
+   * a notification nobody can act on.
+   */
+  siteUrl: string;
+  /**
+   * Where to post when neither the streamline nor its team names a channel.
+   * Without it, and without one of those two, nothing is sent — and the
+   * validator says which streamlines have nowhere to go.
+   */
+  channel?: string;
+  /**
+   * How far back a change can be dated and still be worth announcing, in days.
+   * Defaults to 14.
+   *
+   * This is not what stops a first run from announcing the entire backlog —
+   * nothing dated in the future would be caught by a window on the past. It is
+   * what stops a date backfilled into last year from arriving as news.
+   */
+  lookbackDays?: number;
+  /**
+   * The most messages one run will send. Defaults to 10.
+   *
+   * A cap, not a quota: anything held back is not recorded as sent, so the next
+   * run picks it up. It exists so that a mistake in a large pull request costs
+   * one quiet run and a red workflow rather than a hundred notifications.
+   */
+  maxPerRun?: number;
+}
+
 export interface SiteConfig {
   /** Product name shown in the header, page titles and feeds. */
   name: string;
@@ -106,6 +152,11 @@ export interface SiteConfig {
    * different paths, and the site follows whichever host you name here.
    */
   slackWorkspaceUrl?: string;
+  /**
+   * Post changes to Slack on a schedule. Absent means the feature is off.
+   * See {@link AnnouncementConfig}.
+   */
+  announcements?: AnnouncementConfig;
   /**
    * Locale used to format dates. Dates are always rendered in UTC, so a reader
    * anywhere sees the day the author wrote rather than one shifted by their
@@ -158,6 +209,15 @@ export const siteConfig: SiteConfig = {
   // clickable. See the field's documentation above for why an owner also
   // needs a `slackId` before their handle can link anywhere.
   // slackWorkspaceUrl: 'https://acmeco.slack.com',
+
+  // Uncomment to announce changes in Slack. The site stays exactly as it is
+  // either way — this only adds a scheduled job that posts what changed, for
+  // the people who are never going to visit a roadmap. You also need a
+  // `SLACK_BOT_TOKEN` repository secret; see docs/adopting.md.
+  // announcements: {
+  //   siteUrl: 'https://acmeco.github.io/signpost',
+  //   channel: '#platform-news',
+  // },
 
   locale: 'en-GB',
 

@@ -544,6 +544,17 @@ describe('warnings', () => {
     expect(result.warnings).toEqual([]);
   });
 
+  it('says nothing about announcement channels on a site that does not announce', () => {
+    // The repository ships with `announcements` commented out, and a fork that
+    // never turns it on should never be told about a field it has no use for.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({}),
+    });
+
+    expect(result.warnings.filter((warning) => warning.field?.includes('nnounce'))).toEqual([]);
+  });
+
   it('flags an active streamline that has gone quiet, without failing the build', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,

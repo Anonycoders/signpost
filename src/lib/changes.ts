@@ -1,6 +1,7 @@
 import type { ImpactLevel, LifecycleStage } from '@config';
 import { formatMonth } from './date';
 import type { TimelineEntry } from './timeline';
+import { landsOn } from './updates';
 
 /**
  * The change feed behind /changes/.
@@ -54,16 +55,6 @@ export interface ChangeFeed {
 
 const weightOf = (item: ChangeItem): number =>
   item.kind === 'update' ? item.update.impact.weight : 0;
-
-/**
- * The date this feed files an update under: when the change lands, falling back
- * to when it was written.
- *
- * Without this, a deprecation notice posted six weeks before the switch-off
- * drops into "recently changed" almost immediately, and the page stops
- * answering the question it exists to answer.
- */
-const landsOn = (update: ChangeUpdate): Date => update.effective ?? update.date;
 
 const monthKey = (date: Date): string =>
   `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;

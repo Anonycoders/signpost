@@ -112,6 +112,20 @@ export const phaseSchema = z.object({
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * A chat channel to post into: `#platform-news`, or the channel ID Slack shows
+ * under **View channel details**, `C0123ABCD`.
+ *
+ * Checked rather than taken as free text because there is no second chance to
+ * notice a typo. A wrong channel fails at the moment of posting, inside a
+ * scheduled job nobody is watching, with an announcement that simply never
+ * arrives — which is the failure this whole feature exists to prevent.
+ */
+const channelSchema = z.string().regex(/^(#[a-z0-9][a-z0-9._-]{0,79}|[CGD][A-Z0-9]{6,20})$/, {
+  error:
+    'A channel is either its name with the # (#platform-news) or its ID (C0123ABCD). A bare name will not resolve.',
+});
+
 export const linkSchema = z.object({
   label: z.string().min(1, { error: 'A link needs a label.' }),
   url: z.url({ error: 'A link needs a full URL, starting with http:// or https://.' }),
@@ -167,6 +181,17 @@ export const teamSchema = z.object({
     .max(300, { error: 'Keep the mission to a sentence or two (300 characters).' }),
   /** Where to reach the team: a chat channel, mailing list or similar. */
   channel: z.string().optional(),
+  /**
+   * Where this team's changes are announced, if the site is configured to
+   * announce at all. Falls back to the site-wide channel when absent.
+   *
+   * A different field from `channel` above, and deliberately so. `channel` is
+   * inbound: where a reader goes to ask this team something, printed on the
+   * team's page for a human to read. This one is outbound and is read by a
+   * machine — usually a channel the people who depend on this team are in,
+   * which is rarely the channel the team itself works in.
+   */
+  announceChannel: channelSchema.optional(),
   links: z.array(linkSchema).optional(),
 });
 
@@ -192,6 +217,20 @@ export const updateSchema = z.object({
     .max(120, { error: 'Keep update titles under 120 characters — put detail in the body.' }),
   /** Markdown. Explain what a reader has to do, and by when. */
   body: z.string().optional(),
+  /**
+   * What to say about this in a chat announcement, when the body would not
+   * survive the trip — it is too long, or it leans on formatting a chat message
+   * cannot carry, or it is written for someone already on the page.
+   *
+   * Without it the announcement carries the body, shortened. Either way the
+   * title and a link to the update are added around it, so an override can
+   * never leave a reader with no way through to the detail.
+   */
+  announcement: z
+    .string()
+    .min(1, { error: 'An announcement override needs something to say, or leave it out.' })
+    .max(1000, { error: 'Keep an announcement under 1000 characters — the page holds the detail.' })
+    .optional(),
 });
 
 export const streamlineSchema = z.object({
@@ -230,6 +269,23 @@ export const streamlineSchema = z.object({
       error: 'supersedes must look like team-slug/streamline-slug.',
     })
     .optional(),
+  /**
+   * Where this streamline's changes are announced, overriding its team's
+   * channel. For the one thing that matters to a different audience than
+   * everything else the team owns.
+   */
+  announceChannel: channelSchema.optional(),
+  /**
+   * Set to `false` to keep this one quiet. Its changes are still recorded as
+   * seen, so turning announcements back on later says nothing about the months
+   * they were off — it picks up from that moment, like a new streamline.
+   *
+   * Optional rather than defaulted to `true`: Astro caches parsed content by
+   * file digest, so a schema default does not re-run for a file that has not
+   * changed, and a field that is sometimes `true` and sometimes `undefined` is
+   * worse than one that is only ever absent or `false`.
+   */
+  announce: z.boolean().optional(),
   links: z.array(linkSchema).optional(),
   updates: z.array(updateSchema).default([]),
 });

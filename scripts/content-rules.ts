@@ -1,7 +1,7 @@
 import { siteConfig } from '../site.config';
 import { slugify, updateAnchor } from '../src/lib/anchor';
 import { phaseStageIds } from '../src/lib/schema';
-import type { StreamlineData } from '../src/lib/schema';
+import type { StreamlineData, TeamData } from '../src/lib/schema';
 import { loadStreamlines, loadTeams, repoRelative } from './load-content';
 import type { Problem } from './load-content';
 
@@ -71,11 +71,11 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
   // ---------- Teams ----------
 
   const teams = loadTeams(contentDir, repoRoot);
-  const teamSlugs = new Set<string>();
+  const teamsBySlug = new Map<string, TeamData>();
 
   for (const team of teams.entries) {
     errors.push(...team.problems);
-    if (team.data) teamSlugs.add(team.slug);
+    if (team.data) teamsBySlug.set(team.slug, team.data);
   }
 
   if (teams.entries.length === 0) {
@@ -109,8 +109,8 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
           field: 'team',
           message: `This file is in content/streamlines/${dirSlug}/, so team must be "${dirSlug}", not "${rawTeam}". Move the file or fix the field.`,
         });
-      } else if (!teamSlugs.has(rawTeam)) {
-        const known = [...teamSlugs].sort().join(', ');
+      } else if (!teamsBySlug.has(rawTeam)) {
+        const known = [...teamsBySlug.keys()].sort().join(', ');
         errors.push({
           file: rel(file),
           field: 'team',
@@ -499,9 +499,48 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
     }
   }
 
+  // A streamline that will announce into thin air. The run works out what
+  // changed, finds nowhere to send it, and drops it — which looks exactly like
+  // a streamline that never changed.
+  //
+  // Only ever asked when no site-wide channel is set, because one of those
+  // makes every streamline routable. If nothing anywhere names a channel the
+  // warning goes against site.config.ts instead, on the same reasoning as the
+  // one above: there is one fix, and a copy of it per streamline is not more
+  // helpful, it is just longer.
+
+  const announcements = siteConfig.announcements;
+
+  if (announcements && !announcements.channel) {
+    const homeless = loaded.filter(
+      ({ data }) =>
+        data.announce !== false &&
+        !data.announceChannel &&
+        !teamsBySlug.get(data.team)?.announceChannel,
+    );
+
+    const speaking = loaded.filter(({ data }) => data.announce !== false);
+
+    if (homeless.length > 0 && homeless.length === speaking.length) {
+      warnings.push({
+        file: 'site.config.ts',
+        field: 'announcements.channel',
+        message: `Announcements are configured, but no channel is named anywhere — not here, not on a team, not on a streamline — so nothing would ever be sent. Set announcements.channel, or give each team an announceChannel.`,
+      });
+    } else {
+      for (const { file, data } of homeless) {
+        warnings.push({
+          file: rel(file),
+          field: 'announceChannel',
+          message: `Announcements are configured, but nothing says where this one goes. Add announceChannel here, or to content/teams/${data.team}.yaml, or set announcements.channel in site.config.ts — otherwise its changes are worked out and then dropped.`,
+        });
+      }
+    }
+  }
+
   return {
     errors,
     warnings,
-    counts: { teams: teamSlugs.size, streamlines: loaded.length },
+    counts: { teams: teamsBySlug.size, streamlines: loaded.length },
   };
 }
