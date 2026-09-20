@@ -1,4 +1,27 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
+
+/*
+ * What Tailwind is allowed to read.
+ *
+ * Left to itself it scans the whole repository and takes any word that looks
+ * like a class name — including words in prose. A comment that used the word
+ * "collapse" in a sentence put `.collapse` in this stylesheet, and because the
+ * file is content-hashed, one word of prose changed the markup of every page.
+ * Documentation, tests, YAML content and script comments cannot produce a class
+ * that reaches a browser, so nothing is lost by not reading them.
+ *
+ * Two entries, and the second is the interesting one. Class names live in
+ * `.astro` files, with the single exception of `lib/tone.ts`, which maps a tone
+ * to the utilities that colour it — written out in full for exactly this
+ * reason, since a name built by interpolation is a name no scanner can see.
+ *
+ * If you add components in another format — `.tsx`, `.vue`, `.svelte` — or
+ * another module that spells out class names, add it here. A class that is
+ * never read is never generated, and the failure is a silently unstyled
+ * element rather than an error.
+ */
+@source '../**/*.astro';
+@source '../lib/tone.ts';
 
 /*
  * Dark mode is driven by a `data-theme` attribute on <html>, set before first

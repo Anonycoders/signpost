@@ -341,6 +341,17 @@ name like `` `bg-tone-${tone}-bg` `` is never generated. If you add a tone, add
 it to `TONES` in `site.config.ts`, to both `@theme` blocks in `global.css`, and
 to every record in `tone.ts`.
 
+**What the scanner reads.** `global.css` imports Tailwind with `source(none)`
+and then names its sources: every `.astro` file, plus `tone.ts`. Left to itself
+Tailwind reads the whole repository and takes any word that looks like a class
+name, prose included — the word "collapse" in a comment once put a `.collapse`
+rule in the stylesheet, and since the file is content-hashed, one word changed
+the markup of every page. Docs, tests and YAML cannot produce a class that
+reaches a browser, so nothing is lost by not reading them. **If you add
+components in another format — `.tsx`, `.vue`, `.svelte` — add an `@source` line
+for them.** A class nothing reads is a class nothing generates, and the symptom
+is an unstyled element rather than an error.
+
 **Dark mode.** An attribute, not a class:
 
 ```css
