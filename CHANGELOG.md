@@ -12,6 +12,10 @@ version numbers mean something specific for a fork that merges updates — see
 
 ## [Unreleased]
 
+**Upgrading:** Nothing to do.
+
+## [0.1.0] - 2026-09-20
+
 **Upgrading:** Nothing to do. This is the first release; there is nothing to
 merge it into yet.
 
@@ -31,4 +35,5 @@ merge it into yet.
   and staying silent in a fork that has not configured them.
 - Deployment to GitHub Pages, and a nightly rebuild so relative dates stay true.
 
-[Unreleased]: https://github.com/Anonycoders/signpost/commits/main
+[Unreleased]: https://github.com/Anonycoders/signpost/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Anonycoders/signpost/releases/tag/v0.1.0
