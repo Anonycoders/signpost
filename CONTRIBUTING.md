@@ -110,6 +110,11 @@ One instruction per line, under 200 characters, in plain sentences: these are
 not Markdown, and the feed and chat both carry them as text. Put the reasoning
 in the body and keep these to the doing.
 
+Quote any line with a `#` in it — `- "Tell us in #devops"`. Unquoted, YAML reads
+the `#` as the start of a comment and throws away the rest of the sentence, and
+nothing about the file looks wrong afterwards. The same is true of a `title`,
+and it is why the bodies here are written as `|` blocks.
+
 No dates on them. An update already has `date` and `effective`; a deadline
 attached to one line of a list is a second calendar that nothing else on the
 site knows about. If two things are due on different days, they are two updates.
