@@ -263,6 +263,60 @@ updates: []
     expect(messagesOf(result.errors)).toContain('at least one owner');
   });
 
+  it('accepts an owner reachable only on Slack', () => {
+    // The point of the field: a team that lives in chat can name a reachable
+    // owner without inventing a GitHub account or publishing an email address.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: jana.okafor',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts an owner reachable both ways', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    github: janaokafor\n    slack: jana.okafor',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('rejects a slack handle written with the @', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: "@jana.okafor"',
+      ),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A slack handle is the handle only, without the @ or a URL.',
+    );
+  });
+
+  it('rejects a slack handle written as a URL', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: https://example.slack.com/team/U024BE7LH',
+      ),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'A slack handle is the handle only, without the @ or a URL.',
+    );
+  });
+
   it('rejects a summary too long to fit on a card', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,

@@ -77,6 +77,8 @@ const lifecycleLede = [
   .filter(Boolean)
   .join(' ');
 
+const ownersHaveSlack = streamline.owners.some((owner) => owner.slack);
+
 const related = [
   supersededBy && { label: 'Replaced by', streamline: supersededBy },
   supersedes && { label: 'Replaces', streamline: supersedes },
@@ -256,7 +258,13 @@ const related = [
           <h2 class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
             {streamline.owners.length === 1 ? 'Owner' : 'Owners'}
           </h2>
-          <ul class="mt-2 space-y-1.5">
+          {/*
+            Owners become two-line entries once any of them carries a Slack
+            handle, so the gap between people has to grow past the gap inside
+            one person — otherwise the list reads as six loose lines rather
+            than three owners.
+          */}
+          <ul class:list={['mt-2', ownersHaveSlack ? 'space-y-2.5' : 'space-y-1.5']}>
             {
               streamline.owners.map((owner) => (
                 <li class="text-sm">
@@ -276,6 +284,16 @@ const related = [
                     </a>
                   ) : (
                     <span class="text-ink">{owner.name}</span>
+                  )}
+
+                  {/*
+                    Text, not a link, and shown alongside the name rather than
+                    instead of it: an owner may be reachable both ways, and the
+                    reader picks. Same treatment as the team's channel above,
+                    because it is the same kind of fact.
+                  */}
+                  {owner.slack && (
+                    <p class="mt-0.5 font-mono text-xs text-ink-muted">@{owner.slack}</p>
                   )}
                 </li>
               ))

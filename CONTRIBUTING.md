@@ -122,8 +122,11 @@ summary: >-
   Cluster-wide upgrade to Kubernetes 1.31. Workloads still using removed beta
   APIs will stop working when their cluster is upgraded.
 owners:
+  # name is required; github, slack and email are not. Give whichever ways of
+  # reaching this person your organization actually uses.
   - name: Jana Okafor
     github: janaokafor
+    slack: jana.okafor
 timeline:
   # stage: the date it reached (or will reach) that stage.
   # Past dates are what happened, future dates are the plan. Skip stages freely.
@@ -174,7 +177,7 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `category` | yes | One of the categories below |
 | `status` | yes | The stage it is in **today** |
 | `summary` | yes | 10–220 characters. One sentence: what it is and who it affects |
-| `owners` | yes | At least one. `name` required; `github` and `email` optional |
+| `owners` | yes | At least one. `name` required; `github`, `slack` and `email` optional, any combination |
 | `timeline` | yes | At least one date, including one for the current `status` |
 | `links` | no | `label` + full `url`. Migration guides, dashboards, docs |
 | `supersedes` | no | `team-slug/streamline-slug` of the thing this replaces |

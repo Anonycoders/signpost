@@ -127,6 +127,21 @@ export const ownerSchema = z.object({
     })
     .optional(),
   email: z.email({ error: 'That does not look like an email address.' }).optional(),
+  /**
+   * Slack handle, for organizations that live in chat rather than in email.
+   *
+   * Deliberately not turned into a link. A working Slack deep link needs the
+   * member ID (`U024BE7LH`), not the handle — and nobody can read, type or
+   * maintain those by hand, so asking for one would trade a field people can
+   * fill in for a field they would get wrong. The handle is printed as text,
+   * the same way a team's `channel` already is.
+   */
+  slack: z
+    .string()
+    .regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/, {
+      error: 'A slack handle is the handle only, without the @ or a URL.',
+    })
+    .optional(),
 });
 
 export const teamSchema = z.object({

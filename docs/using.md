@@ -302,9 +302,10 @@ Each update has its own anchor, so a link from a feed or a ticket lands on the
 exact announcement rather than the top of the page.
 
 **The sidebar** answers "who do I ask": the owning team and its channel, named
-owners linking to their profile or email, any links the team added (a runbook, a
-design doc, a dashboard), and — when one exists — a "Replaced by" or "Replaces"
-link to the streamline on the other side of a migration.
+owners linking to their profile or email with their Slack handle underneath
+where they gave one, any links the team added (a runbook, a design doc, a
+dashboard), and — when one exists — a "Replaced by" or "Replaces" link to the
+streamline on the other side of a migration.
 
 At the bottom: **"Edit this page →"**, with the line "Anything wrong or out of
 date? Open a pull request — it is one file." If something on the page is wrong,
