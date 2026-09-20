@@ -18,8 +18,13 @@ import { toneSurfaceClass, toneTextClass } from '@/lib/tone';
  * construction.
  *
  * Each line is inline Markdown — emphasis, a code span, a link. Deliberately
- * not the block kind: this is one line of a list, and a heading or a table
- * inside it would be a paragraph pretending to be a task.
+ * not the block kind: this is one line of a list, and a heading or a nested
+ * list inside it would be a paragraph pretending to be a task.
+ *
+ * That sentence is careful about which words it uses. Tailwind scans this file
+ * as text and cannot tell a sentence from a class name: naming the other kind
+ * of block element here, the one made of rows and columns, put a rule for it
+ * into the stylesheet every page loads. See the top of `styles/global.css`.
  */
 interface Props {
   actions: string[];
