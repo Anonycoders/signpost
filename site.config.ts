@@ -92,6 +92,21 @@ export interface SiteConfig {
     url: string;
   };
   /**
+   * Your Slack workspace, if the people who own streamlines are reachable in
+   * it. Leave it out and nothing breaks: owners' Slack handles are still
+   * printed, they simply are not links.
+   *
+   * Set it and any owner carrying a `slackId` gets a clickable handle. Both
+   * halves are needed because Slack will not resolve a display name — the
+   * workspace says where, the member ID says who, and neither alone is an
+   * address.
+   *
+   * A workspace: `https://acmeco.slack.com`. An Enterprise Grid org:
+   * `https://acmeorg.enterprise.slack.com`. The two address a member by
+   * different paths, and the site follows whichever host you name here.
+   */
+  slackWorkspaceUrl?: string;
+  /**
    * Locale used to format dates. Dates are always rendered in UTC, so a reader
    * anywhere sees the day the author wrote rather than one shifted by their
    * own timezone.
@@ -138,6 +153,11 @@ export const siteConfig: SiteConfig = {
     label: '#platform-questions',
     url: 'https://github.com/Anonycoders/signpost/issues',
   },
+
+  // Uncomment and point at your own workspace to make owners' Slack handles
+  // clickable. See the field's documentation above for why an owner also
+  // needs a `slackId` before their handle can link anywhere.
+  // slackWorkspaceUrl: 'https://acmeco.slack.com',
 
   locale: 'en-GB',
 

@@ -28,6 +28,18 @@ export interface Team {
   editUrl: string;
 }
 
+/**
+ * A named owner, with their Slack profile resolved if it can be.
+ *
+ * The resolution happens here rather than in the template because it depends
+ * on configuration as well as content — the workspace comes from site.config,
+ * the member ID from the file — and a page should not have to know that.
+ */
+export interface Owner extends OwnerData {
+  /** Link to this person in Slack, when the workspace and their id are both known. */
+  slackHref?: string;
+}
+
 export interface Update {
   date: Date;
   /** When the change lands, if that is not the day it was written. */
@@ -66,7 +78,7 @@ export interface Streamline {
   team: Team;
   stage: LifecycleStage;
   category: Category;
-  owners: OwnerData[];
+  owners: Owner[];
   links: LinkData[];
   /** Stage id -> date, in lifecycle order, only stages that have a date. */
   timeline: Array<{ stage: LifecycleStage; date: Date }>;
@@ -103,6 +115,48 @@ export function profileUrl(handle: string): string {
   } catch {
     return `https://github.com/${handle}`;
   }
+}
+
+/**
+ * A member's Slack profile, given the workspace this site is configured for.
+ *
+ * Takes the workspace rather than reading it, matching `resolveDocHref` — the
+ * config-dependent URL builders in this codebase are pure, so their branches
+ * can be tested without standing up a different site.
+ *
+ * Returns undefined rather than guessing whenever the link cannot be built,
+ * because a Slack link that lands nowhere is worse than a handle printed as
+ * text: the reader has already spent the click.
+ *
+ * Enterprise Grid addresses a member under the org's own subdomain and at a
+ * different path, with the id prefixed by an `@` that the workspace form does
+ * not use. Both are Slack's own documented profile links.
+ */
+export function slackProfileUrl(
+  memberId: string,
+  workspaceUrl: string | undefined,
+): string | undefined {
+  if (!workspaceUrl) return undefined;
+
+  try {
+    const base = new URL(workspaceUrl);
+    const path = base.hostname.endsWith('.enterprise.slack.com')
+      ? `/user/@${memberId}`
+      : `/team/${memberId}`;
+
+    return new URL(path, base).href;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildOwner(owner: OwnerData): Owner {
+  // Only a handle can carry the link, because the handle is what the page
+  // shows. An id on its own has nothing to attach to; the validator says so.
+  if (!owner.slack || !owner.slackId) return owner;
+
+  const slackHref = slackProfileUrl(owner.slackId, siteConfig.slackWorkspaceUrl);
+  return slackHref ? { ...owner, slackHref } : owner;
 }
 
 function buildTeam(entry: CollectionEntry<'teams'>): Team {
@@ -220,7 +274,7 @@ async function load() {
       team: teamBySlug.get(teamSlug) ?? missingTeam(teamSlug),
       stage: getStage(data.status),
       category: getCategory(data.category),
-      owners: data.owners,
+      owners: data.owners.map(buildOwner),
       links: data.links ?? [],
       timeline,
       phases,

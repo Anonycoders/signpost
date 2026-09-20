@@ -287,13 +287,33 @@ const related = [
                   )}
 
                   {/*
-                    Text, not a link, and shown alongside the name rather than
-                    instead of it: an owner may be reachable both ways, and the
-                    reader picks. Same treatment as the team's channel above,
-                    because it is the same kind of fact.
+                    Shown alongside the name rather than instead of it: an
+                    owner may be reachable both ways, and the reader picks.
+                    Same treatment as the team's channel above, because it is
+                    the same kind of fact.
+
+                    A link only when one can actually be built — Slack will not
+                    resolve a handle, so an owner without a member ID, or a site
+                    without a configured workspace, gets the handle as text. It
+                    reads the same either way; the difference is that a link
+                    here always goes somewhere.
+
+                    The anchor sits inside the paragraph rather than replacing
+                    it so that it is only as wide as the handle. As the line
+                    itself it stretched the width of the sidebar, and a click
+                    into the empty space to the right of a twelve-character
+                    handle opened Slack.
                   */}
                   {owner.slack && (
-                    <p class="mt-0.5 font-mono text-xs text-ink-muted">@{owner.slack}</p>
+                    <p class="mt-0.5 font-mono text-xs text-ink-muted">
+                      {owner.slackHref ? (
+                        <a href={owner.slackHref} class="transition-colors hover:text-accent">
+                          @{owner.slack}
+                        </a>
+                      ) : (
+                        <>@{owner.slack}</>
+                      )}
+                    </p>
                   )}
                 </li>
               ))

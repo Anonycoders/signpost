@@ -317,6 +317,44 @@ updates: []
     );
   });
 
+  it('accepts a member ID alongside the handle', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: jana.okafor\n    slackId: U024BE7LH',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('accepts an Enterprise Grid member ID', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: jana.okafor\n    slackId: W1H63D8SZ',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it('rejects the handle written where the member ID goes', () => {
+    // The likeliest mistake by a mile, and the one that would otherwise build a
+    // link straight to a Slack page that does not exist.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: jana.okafor\n    slackId: jana.okafor',
+      ),
+    });
+
+    expect(messagesOf(result.errors)).toContain('A slack member ID looks like U024BE7LH');
+  });
+
   it('rejects a summary too long to fit on a card', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
@@ -828,5 +866,67 @@ describe('a streamline against its own phases', () => {
 
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
+  });
+});
+
+/**
+ * The two ways a Slack member ID ends up doing nothing.
+ *
+ * Both are warnings rather than errors: the page is still correct, and nobody
+ * should be blocked from merging a streamline over a contact detail. But both
+ * fail silently otherwise — the author did the tedious work of copying IDs out
+ * of Slack and got plain text for it, with nothing anywhere to say why.
+ */
+describe('slack member IDs that cannot link', () => {
+  it('warns when an ID has no handle to attach to', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    github: janaokafor\n    slackId: U024BE7LH',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(messagesOf(result.warnings)).toContain(
+      'Jana Okafor has a slack member ID but no slack handle',
+    );
+  });
+
+  it('warns once, against site.config.ts, when no workspace is configured', () => {
+    // The fix is one line in one file, whether two streamlines carry IDs or
+    // fifty. Repeating it per streamline would bury the rest of the report.
+    const withId = streamline().replace(
+      '    github: janaokafor',
+      '    github: janaokafor\n    slack: jana.okafor\n    slackId: U024BE7LH',
+    );
+
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': withId,
+      'content/streamlines/devops/runner-fleet.md': withId.replace(
+        'title: Kubernetes upgrade',
+        'title: Runner fleet',
+      ),
+    });
+
+    const configWarnings = result.warnings.filter((w) => w.file === 'site.config.ts');
+
+    expect(result.errors).toEqual([]);
+    expect(configWarnings).toHaveLength(1);
+    expect(configWarnings[0]?.message).toContain('2 streamlines');
+    expect(configWarnings[0]?.message).toContain('no Slack workspace is configured');
+  });
+
+  it('says nothing when the handles carry no IDs', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+        '    github: janaokafor',
+        '    slack: jana.okafor',
+      ),
+    });
+
+    expect(result.warnings.filter((w) => w.file === 'site.config.ts')).toEqual([]);
   });
 });

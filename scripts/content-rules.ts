@@ -235,6 +235,23 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
     streamlineIds.set(relativeId, rel(file));
     loaded.push({ file, id: relativeId, data });
 
+    // ---------- Owners ----------
+    //
+    // The member ID is machinery: it never appears on the page, and its only
+    // job is to make the handle clickable. Without a handle to attach to it
+    // does nothing at all, silently — which is the kind of quiet nothing an
+    // author discovers months later, if ever.
+
+    data.owners.forEach((owner, index) => {
+      if (owner.slackId && !owner.slack) {
+        warnings.push({
+          file: rel(file),
+          field: `owners[${index}].slackId`,
+          message: `${owner.name} has a slack member ID but no slack handle, so nothing is shown and nothing links. Add the handle, or drop the id.`,
+        });
+      }
+    });
+
     // ---------- Timeline coherence ----------
 
     const timeline = data.timeline as Record<string, Date | undefined>;
@@ -491,6 +508,34 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
         file: rel(file),
         field: 'supersedes',
         message: `"${data.supersedes}" does not exist. Expected a file at content/streamlines/${data.supersedes}.md.`,
+      });
+    }
+  }
+
+  // ---------- Content against configuration ----------
+  //
+  // A member ID is only ever half an address: it says who, and site.config
+  // says where. Someone who has gone to the trouble of copying IDs out of
+  // Slack has done the tedious half and would otherwise get nothing for it,
+  // with no error and no clue — the handles would simply render as text.
+  //
+  // Reported once, against the file that has to change, rather than once per
+  // streamline: there is one fix, and thirteen copies of it is not thirteen
+  // times as helpful.
+
+  if (!siteConfig.slackWorkspaceUrl) {
+    const withIds = loaded.filter(({ data }) => data.owners.some((owner) => owner.slackId));
+
+    if (withIds.length > 0) {
+      const where =
+        withIds.length === 1
+          ? rel(withIds[0]!.file)
+          : `${withIds.length} streamlines, starting with ${rel(withIds[0]!.file)}`;
+
+      warnings.push({
+        file: 'site.config.ts',
+        field: 'slackWorkspaceUrl',
+        message: `Owners carry a slackId in ${where}, but no Slack workspace is configured, so their handles will not link. Set slackWorkspaceUrl in site.config.ts, or drop the ids.`,
       });
     }
   }

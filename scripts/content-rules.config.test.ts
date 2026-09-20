@@ -5,10 +5,14 @@ import { tmpdir } from 'node:os';
 import { describe, expect, it, vi } from 'vitest';
 
 /**
+ * Rules that only say the right thing on a differently configured site.
+ *
  * The lifecycle is configuration, and the promise made in docs/adopting.md is
  * that an organization can rename every stage without editing code. These
  * tests hold that promise honest for the one rule that used to know two stage
- * names by heart: a streamline that is going away must say when it ends.
+ * names by heart: a streamline that is going away must say when it ends. The
+ * Slack rule below is here for the same reason from the other direction — it
+ * has to go quiet once the workspace exists.
  *
  * A separate file from content-rules.test.ts because the whole point is a
  * different site.config, and the rules read it once at import.
@@ -18,6 +22,7 @@ vi.mock('../site.config', () => {
   const siteConfig = {
     name: 'Atlas',
     locale: 'en-GB',
+    slackWorkspaceUrl: 'https://atlas.slack.com',
     lifecycle: [
       { id: 'idea', label: 'Idea', description: 'Being considered.', tone: 'gray' },
       { id: 'live', label: 'Live', description: 'In production.', tone: 'green' },
@@ -133,5 +138,25 @@ describe('the anti-surprise rule on a renamed lifecycle', () => {
     });
 
     expect(result.errors).toEqual([]);
+  });
+});
+
+describe('slack member IDs on a configured workspace', () => {
+  it('says nothing, because the ids now have somewhere to point', () => {
+    const result = fixture({
+      'content/teams/platform.yaml': TEAM,
+      'content/streamlines/platform/build-cache.md': streamline(
+        'live',
+        `
+  idea: 2025-11-01
+  live: 2026-03-01`,
+      ).replace(
+        '  - name: Ada Okonkwo',
+        '  - name: Ada Okonkwo\n    slack: ada\n    slackId: U024BE7LH',
+      ),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings.filter((warning) => warning.file === 'site.config.ts')).toEqual([]);
   });
 });

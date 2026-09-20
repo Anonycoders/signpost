@@ -141,3 +141,54 @@ describe('streamline phases', () => {
     ]);
   });
 });
+
+/**
+ * Turning a Slack handle into a link.
+ *
+ * Pure, and tested here rather than through a page, because the interesting
+ * part is the set of ways it can decline to build a URL. Slack will not resolve
+ * a display name, so every one of those refusals is the honest answer — a link
+ * that lands nowhere costs the reader a click they cannot get back.
+ */
+describe('slackProfileUrl', () => {
+  it('builds a workspace profile link', async () => {
+    const { slackProfileUrl } = await import('./content');
+
+    expect(slackProfileUrl('U024BE7LH', 'https://acmeco.slack.com')).toBe(
+      'https://acmeco.slack.com/team/U024BE7LH',
+    );
+  });
+
+  it('addresses an Enterprise Grid member the way Grid does', async () => {
+    // Different path, and an @ the workspace form does not use. Both are
+    // Slack's own; getting this wrong sends half the large orgs to a 404.
+    const { slackProfileUrl } = await import('./content');
+
+    expect(slackProfileUrl('W1H63D8SZ', 'https://acmeorg.enterprise.slack.com')).toBe(
+      'https://acmeorg.enterprise.slack.com/user/@W1H63D8SZ',
+    );
+  });
+
+  it('declines when no workspace is configured', async () => {
+    const { slackProfileUrl } = await import('./content');
+
+    expect(slackProfileUrl('U024BE7LH', undefined)).toBeUndefined();
+    expect(slackProfileUrl('U024BE7LH', '')).toBeUndefined();
+  });
+
+  it('declines rather than guessing when the workspace is not a URL', async () => {
+    const { slackProfileUrl } = await import('./content');
+
+    expect(slackProfileUrl('U024BE7LH', 'acmeco')).toBeUndefined();
+  });
+
+  it('ignores a path on the configured workspace', async () => {
+    // Someone will paste the URL with a trailing path on it. The member lives
+    // at the root of the workspace either way.
+    const { slackProfileUrl } = await import('./content');
+
+    expect(slackProfileUrl('U024BE7LH', 'https://acmeco.slack.com/archives/C123')).toBe(
+      'https://acmeco.slack.com/team/U024BE7LH',
+    );
+  });
+});

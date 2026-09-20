@@ -122,11 +122,13 @@ summary: >-
   Cluster-wide upgrade to Kubernetes 1.31. Workloads still using removed beta
   APIs will stop working when their cluster is upgraded.
 owners:
-  # name is required; github, slack and email are not. Give whichever ways of
-  # reaching this person your organization actually uses.
+  # name is required; the rest are not. Give whichever ways of reaching this
+  # person your organization actually uses. slackId is optional even when slack
+  # is set — see "Reaching an owner on Slack" below.
   - name: Jana Okafor
     github: janaokafor
     slack: jana.okafor
+    slackId: U024BE7LH
 timeline:
   # stage: the date it reached (or will reach) that stage.
   # Past dates are what happened, future dates are the plan. Skip stages freely.
@@ -177,12 +179,40 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `category` | yes | One of the categories below |
 | `status` | yes | The stage it is in **today** |
 | `summary` | yes | 10–220 characters. One sentence: what it is and who it affects |
-| `owners` | yes | At least one. `name` required; `github`, `slack` and `email` optional, any combination |
+| `owners` | yes | At least one. `name` required; `github`, `slack`, `slackId` and `email` optional, any combination |
 | `timeline` | yes | At least one date, including one for the current `status` |
 | `links` | no | `label` + full `url`. Migration guides, dashboards, docs |
 | `supersedes` | no | `team-slug/streamline-slug` of the thing this replaces |
 | `phases` | no | The rollout, audience by audience — see below |
 | `updates` | no | Newest first |
+
+### Reaching an owner on Slack
+
+```yaml
+owners:
+  - name: Jana Okafor
+    slack: jana.okafor # what the page shows
+    slackId: U024BE7LH # what makes it a link
+```
+
+Two fields, because Slack needs two things and neither one does the job alone.
+
+`slack` is the handle: readable, what a colleague would type to find this
+person, and what the page actually prints. On its own it is printed as plain
+text.
+
+`slackId` is that person's member ID. Slack has no URL that resolves a display
+name — names are not unique and are not addressable — so the ID is the only
+identifier a link can be built from. Add it and the handle becomes a link to
+their Slack profile. It never appears on the page; nobody has to read it.
+
+To find one: open the member's profile in Slack, click **More**, then **Copy
+member ID**. It starts with `U`, or `W` on Enterprise Grid.
+
+This only works if your instance has been pointed at your workspace —
+`slackWorkspaceUrl` in [site.config.ts](site.config.ts), set once for everyone.
+If it has not been, the validator will tell you rather than leaving you with
+handles that quietly refuse to link.
 
 ### Rollout phases
 
@@ -287,6 +317,8 @@ error content/streamlines/devops/jenkins-pipelines.md
 
 - An active streamline with no update for six months. Either post something or
   move the status on — a roadmap nobody maintains is worse than no roadmap.
+- A `slackId` with no `slack` handle beside it, or with no workspace configured
+  for the site — either way the ID does nothing, and silently.
 
 Nothing in the validator cares about prose. It cannot tell you that your update
 is vague, so that part is on you and your reviewer.

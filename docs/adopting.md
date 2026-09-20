@@ -93,6 +93,28 @@ because a question about how Signpost behaves belongs upstream rather than in a
 site full of invented teams. Set `repository` to where your content lives, and
 `contact` to wherever the person asking will get an answer.
 
+### Slack workspace
+
+```ts
+slackWorkspaceUrl: 'https://acmeco.slack.com',
+// Enterprise Grid: 'https://acmeorg.enterprise.slack.com'
+```
+
+Optional, and the only setting here that changes what a link *does* rather than
+what it says. Leave it out and nothing breaks: an owner's Slack handle is still
+printed beside their name, it simply is not clickable.
+
+Set it and any owner carrying a `slackId` gets a handle that links straight to
+them in Slack. Both halves are required because Slack will not resolve a display
+name: this setting says which workspace, the member ID in the content file says
+which person, and neither is an address on its own. Contributors are told how to
+find a member ID in [CONTRIBUTING.md](../CONTRIBUTING.md); they only have to do
+it once per person.
+
+Set this before you ask anyone for IDs, not after. The validator warns when IDs
+have been collected into content that has nowhere to point them, which is a
+courtesy rather than a substitute for doing it in the right order.
+
 ### Locale
 
 ```ts

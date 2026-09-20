@@ -130,16 +130,31 @@ export const ownerSchema = z.object({
   /**
    * Slack handle, for organizations that live in chat rather than in email.
    *
-   * Deliberately not turned into a link. A working Slack deep link needs the
-   * member ID (`U024BE7LH`), not the handle — and nobody can read, type or
-   * maintain those by hand, so asking for one would trade a field people can
-   * fill in for a field they would get wrong. The handle is printed as text,
-   * the same way a team's `channel` already is.
+   * This is the readable half: what a colleague would type to find this
+   * person. It is what the page prints, and on its own it is printed as plain
+   * text, because Slack has no URL that resolves a handle — display names are
+   * not unique and are not addressable. `slackId` is the half that links.
    */
   slack: z
     .string()
     .regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/, {
       error: 'A slack handle is the handle only, without the @ or a URL.',
+    })
+    .optional(),
+  /**
+   * Slack member ID — `U024BE7LH`, or `W…` on Enterprise Grid. In Slack:
+   * open the member's profile, then **More → Copy member ID**.
+   *
+   * The only identifier Slack will resolve, which is why it exists as a field
+   * of its own: with it, and a `slackWorkspaceUrl` in site.config.ts, the
+   * handle above becomes a link to that person's profile. Nobody has to read
+   * the ID — it never appears on the page.
+   */
+  slackId: z
+    .string()
+    .regex(/^[UW][A-Z0-9]{6,20}$/, {
+      error:
+        'A slack member ID looks like U024BE7LH. Find it on the member’s Slack profile under More → Copy member ID — it is not the handle.',
     })
     .optional(),
 });

@@ -303,7 +303,8 @@ exact announcement rather than the top of the page.
 
 **The sidebar** answers "who do I ask": the owning team and its channel, named
 owners linking to their profile or email with their Slack handle underneath
-where they gave one, any links the team added (a runbook, a design doc, a
+where they gave one — clickable through to Slack if this instance is pointed at
+your workspace — any links the team added (a runbook, a design doc, a
 dashboard), and — when one exists — a "Replaced by" or "Replaces" link to the
 streamline on the other side of a migration.
 
