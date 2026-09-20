@@ -42,11 +42,64 @@ export function renderMarkdown(content: string): string {
   return marked.parse(content, { async: false });
 }
 
-/** The same prose as plain text, for a feed summary or a meta description. */
+/**
+ * The named entities the renderer emits, plus the one authors type by hand.
+ *
+ * Anything else is left as it was written. A `&copy;` nobody decoded is odd to
+ * read; a `&copy;` nobody decoded and then deleted is a word missing from a
+ * sentence, and only one of those is something a writer can see and fix.
+ */
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+};
+
+/** Whether a numeric reference stands for something a sentence can hold. */
+function isPrintable(code: number): boolean {
+  if (!Number.isInteger(code) || code > 0x10ffff) return false;
+  // A lone surrogate is half a character and renders as a replacement box.
+  if (code >= 0xd800 && code <= 0xdfff) return false;
+  if (code === 0x7f) return false;
+  // The three that survive are whitespace, and collapse to a space below.
+  return code >= 0x20 || code === 0x09 || code === 0x0a || code === 0x0d;
+}
+
+/**
+ * Entities back into the characters they stand for.
+ *
+ * `renderMarkdown` escapes as it renders, because its output is HTML. Plain
+ * text is not, so an `&amp;` here is not an ampersand being kept safe — it is
+ * an ampersand written in a language nothing downstream speaks. This used to
+ * delete them, which is why a body reading `R&D` arrived as `R D` and
+ * `--context <your-cluster>` arrived as `--context`, with the placeholder the
+ * sentence was about gone and no sign that anything had been.
+ *
+ * One pass, so `&amp;lt;` decodes to `&lt;` and stops there. Decoding twice
+ * would let an author write a character they never wrote.
+ *
+ * Both callers escape what they get — the feed for XML, the announcer for
+ * Slack's mrkdwn — so a decoded `<` is text at every end. Order matters for
+ * that: tags are stripped before this runs, never after, or a decoded `<`
+ * would look like markup and take the rest of the sentence with it.
+ */
+function decodeEntities(text: string): string {
+  return text.replace(/&(#\d{1,7}|#[Xx][0-9A-Fa-f]{1,6}|[A-Za-z]+);/g, (whole, body: string) => {
+    if (!body.startsWith('#')) return NAMED_ENTITIES[body.toLowerCase()] ?? whole;
+
+    const hex = body[1] === 'x' || body[1] === 'X';
+    const code = Number.parseInt(body.slice(hex ? 2 : 1), hex ? 16 : 10);
+
+    return isPrintable(code) ? String.fromCodePoint(code) : whole;
+  });
+}
+
+/** The same prose as plain text, for a feed summary or a chat message. */
 export function toPlainText(content: string, limit = 400): string {
-  const text = renderMarkdown(content)
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&(#\d+|[a-z]+);/gi, ' ')
+  const text = decodeEntities(renderMarkdown(content).replace(/<[^>]+>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim();
 

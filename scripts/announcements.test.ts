@@ -319,6 +319,35 @@ describe('text Slack would otherwise parse', () => {
     expect(text).not.toMatch(/&(?!amp;|lt;|gt;)/);
   });
 
+  it('carries a body through whole, escaped rather than emptied', () => {
+    // Both halves of the same sentence: flattening the Markdown keeps the
+    // ampersand and the placeholder, and escaping them here is what makes
+    // Slack show the characters instead of reading them as markup.
+    const result = collect({
+      ledger: seeded(),
+      streamlines: [
+        {
+          id: 'devops/kubernetes-upgrade',
+          data: streamline({
+            updates: [
+              { date: '2026-09-18', impact: 'info', title: 'Rollout has started' },
+              {
+                date: '2026-09-19',
+                impact: 'breaking',
+                title: 'Ingress v1beta1 is removed',
+                body: 'Ask R&D first. Run `--context <your-cluster>` to see what breaks.',
+              },
+            ],
+          }),
+        },
+      ],
+    });
+
+    expect(result.announcements[0]?.text).toContain(
+      'Ask R&amp;D first. Run --context &lt;your-cluster&gt; to see what breaks.',
+    );
+  });
+
   it('escapes a phase name and its audience', () => {
     const result = collect({
       ledger: seeded(),
