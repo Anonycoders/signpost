@@ -9,7 +9,8 @@ import { toneSolidVar } from '@/lib/tone';
  * Only stages with a date are shown — that is the story this streamline
  * actually has, rather than a row of stages it skipped. Dates in the future are
  * drawn as plans (hollow marker, dashed connector) so a reader is never left
- * guessing which parts have happened.
+ * guessing which parts have happened. The stage it is sitting in right now
+ * pulses, so that "where is this today" is answered before the page is read.
  */
 interface Props {
   streamline: Streamline;
@@ -17,18 +18,35 @@ interface Props {
 
 const { streamline } = Astro.props;
 
-const steps = streamline.timeline.map((entry) => ({
-  ...entry,
-  planned: isFuture(entry.date),
-  current: entry.stage.id === streamline.stage.id,
-}));
+const steps = streamline.timeline.map((entry) => {
+  const current = entry.stage.id === streamline.stage.id;
+
+  return {
+    ...entry,
+    planned: isFuture(entry.date),
+    current,
+    /**
+     * Whether this step gets the pulse.
+     *
+     * The stage a streamline is sitting in right now, unless that stage is a
+     * terminal one — a switched-off thing is still "current" somewhere on the
+     * stepper, and a heartbeat on it would say the opposite of what the grey
+     * callout above the stepper says. Asked of the lifecycle rather than of a
+     * stage name, so a fork that renames its stages keeps the behaviour.
+     */
+    beating: current && !entry.stage.terminal,
+  };
+});
 ---
 
 <ol class="stepper" aria-label="Lifecycle">
   {
     steps.map((step, index) => (
       <li
-        class:list={['step', { planned: step.planned, current: step.current }]}
+        class:list={[
+          'step',
+          { planned: step.planned, current: step.current, beating: step.beating },
+        ]}
         style={`--dot: ${toneSolidVar[step.stage.tone]}`}
       >
         {/*
@@ -108,8 +126,10 @@ const steps = streamline.timeline.map((entry) => ({
   }
 
   /* `block` matters: in the horizontal layout below the step is a block box,
-   * and an inline span would ignore width and height entirely. */
+   * and an inline span would ignore width and height entirely. `relative` is
+   * for the pulse, which is drawn as a ring around this dot. */
   .marker {
+    position: relative;
     display: block;
     margin-top: 0.3125rem;
     width: 0.75rem;
@@ -127,6 +147,51 @@ const steps = streamline.timeline.map((entry) => ({
 
   .step.current .marker {
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot) 22%, transparent);
+  }
+
+  /* The pulse: a second ring, starting exactly where the resting ring above
+   * sits, expanding out of it and fading. A ring rather than a filled disc so
+   * it reads the same around a hollow planned marker as around a solid one,
+   * and so it never covers the dot it is drawing attention to.
+   *
+   * It rests at `opacity: 0`, which is what makes the reduced-motion rule in
+   * global.css do the right thing for free: that rule cuts the animation to a
+   * single 0.01ms run, after which the element falls back to these base styles
+   * and disappears, leaving the static ring alone to mark the current stage —
+   * exactly the page as it was before this existed.
+   *
+   * Animating transform and opacity only, rather than the spread of the ring
+   * itself, so the browser can hand the whole thing to the compositor instead
+   * of repainting a box-shadow for as long as the page is open.
+   */
+  .step.beating .marker::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot) 45%, transparent);
+    opacity: 0;
+    animation: stage-beat 2.4s ease-out infinite;
+  }
+
+  /* Long and slow on purpose. This sits beside prose that people are reading,
+   * and a fast pulse stops being a signal and becomes something to scroll away
+   * from. The rest at the end is most of the cycle: one beat, then quiet. */
+  @keyframes stage-beat {
+    0% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+
+    70% {
+      opacity: 0;
+      transform: scale(2);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(2);
+    }
   }
 
   .label {

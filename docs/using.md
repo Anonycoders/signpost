@@ -255,7 +255,11 @@ streamline actually has dates for — the story it had, rather than a row of
 stages it skipped. A filled dot with a solid line is a stage it has been
 through. **A hollow dot, reached by a dashed line, is a stage that has not
 happened yet**: the date under it is a plan. The current stage has a soft ring
-around its dot. Under the heading, a line summarises the next move — "Next:
+around its dot, and that ring pulses, so you can find where a thing is today
+without reading the dates. It stops once the streamline reaches a stage it
+will not leave — a switched-off thing is not going anywhere — and it does not
+run at all if your system is set to reduce motion, where the ring is simply
+still. Under the heading, a line summarises the next move — "Next:
 deprecated on 1 March 2027, in 5 months." — or says "No dates planned beyond
 today."
 
