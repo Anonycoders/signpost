@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import { load as loadYaml } from 'js-yaml';
 
 import { siteConfig } from '../site.config';
-import { streamlineSchema, teamSchema } from '../src/lib/schema';
+import { phaseStageIds, streamlineSchema, teamSchema } from '../src/lib/schema';
 
 /**
  * Content rules that a schema cannot express.
@@ -358,6 +358,61 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
         });
       }
     });
+
+    // ---------- The streamline against its own phases ----------
+    //
+    // Different question from the one above, and the reason it is worth asking:
+    // the page draws the stepper and the phase rows inside a single card, so a
+    // streamline whose own dates stop before its last phase does — or whose
+    // status has run ahead of every audience — renders as one box contradicting
+    // itself, and the author is the last person to notice.
+    //
+    // Only in that direction. A phase ahead of its streamline is the design:
+    // the pilot team is generally available while the thing as a whole is still
+    // rolling out. That is the entire point of phases and never a warning.
+
+    if (data.phases.length > 0) {
+      const lastDated = datedStages[datedStages.length - 1];
+
+      let latestPhase: { name: string; date: Date } | undefined;
+
+      for (const phase of data.phases) {
+        const phaseTimeline = (phase.timeline ?? {}) as Record<string, Date | undefined>;
+
+        for (const stage of STAGE_ORDER) {
+          const date = phaseTimeline[stage];
+          if (!(date instanceof Date)) continue;
+          if (!latestPhase || date.getTime() > latestPhase.date.getTime()) {
+            latestPhase = { name: phase.name, date };
+          }
+        }
+      }
+
+      if (lastDated && latestPhase && latestPhase.date.getTime() > lastDated.date.getTime()) {
+        warnings.push({
+          file: rel(file),
+          field: 'timeline',
+          message: `The timeline ends on ${formatDate(lastDated.date)}, but "${latestPhase.name}" runs to ${formatDate(latestPhase.date)} — the streamline finishes before its own rollout does. Extend the timeline, or correct the phase date.`,
+        });
+      }
+
+      // Skipped once a streamline is winding down: it is then past every stage
+      // a phase is allowed to be in, and there is nothing inconsistent in that.
+      const statusIndex = phaseStageIds.indexOf(data.status);
+      const furthest = data.phases.reduce(
+        (best, phase) => Math.max(best, phaseStageIds.indexOf(phase.status)),
+        -1,
+      );
+
+      if (statusIndex > -1 && furthest > -1 && statusIndex > furthest) {
+        const reached = STAGE_LABEL.get(phaseStageIds[furthest]!) ?? phaseStageIds[furthest]!;
+        warnings.push({
+          file: rel(file),
+          field: 'status',
+          message: `This is marked ${STAGE_LABEL.get(data.status)}, but no phase has got past ${reached} — by its own phases, no audience is there yet. Move a phase on, or take the status back.`,
+        });
+      }
+    }
 
     // ---------- Updates ----------
 

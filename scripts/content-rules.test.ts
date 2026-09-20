@@ -388,6 +388,17 @@ describe('rollout phases', () => {
   /** Frontmatter for a `phases:` block, indented to sit under the key. */
   const phases = (yaml: string) => `\nphases:${yaml}`;
 
+  /**
+   * A streamline timeline long enough to contain a phase dated 2099, so tests
+   * using that sentinel get only the warning they are about and not the
+   * separate rule that a timeline has to cover its own phases.
+   */
+  const COVERS_2099 = `
+  proposed: 2026-01-15
+  in-development: 2026-03-02
+  rolling-out: 2026-09-01
+  generally-available: 2099-01-01`;
+
   const PILOT_THEN_EVERYONE = phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -420,7 +431,7 @@ describe('rollout phases', () => {
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
-    status: proposed`),
+    status: rolling-out`),
       }),
     });
 
@@ -590,6 +601,9 @@ describe('rollout phases', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
       'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        // Reaching far enough forward to cover the phase below, so this test
+        // gets the one warning it is about and not the envelope rule as well.
+        timeline: COVERS_2099,
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -630,6 +644,7 @@ describe('rollout phases', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
       'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        timeline: COVERS_2099,
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -637,6 +652,123 @@ describe('rollout phases', () => {
     timeline:
       rolling-out: 2026-01-01
       generally-available: 2099-01-01`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+});
+
+describe('a streamline against its own phases', () => {
+  const phases = (yaml: string) => `\nphases:${yaml}`;
+
+  it('warns when the timeline stops before the last phase does', () => {
+    // The disconnect a reader actually sees: the stepper finishes in September,
+    // and directly below it in the same card sits a wave that has not started
+    // until the following spring.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-09-01
+  - name: Phase 2
+    audience: Everyone else
+    status: proposed
+    timeline:
+      rolling-out: 2027-04-12`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(messagesOf(result.warnings)).toContain(
+      'The timeline ends on 2026-09-01, but "Phase 2" runs to 2027-04-12 — the streamline finishes before its own rollout does. Extend the timeline, or correct the phase date.',
+    );
+    expect(result.warnings[0]?.field).toBe('timeline');
+  });
+
+  it('accepts a timeline that ends exactly where the last phase does', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+    timeline:
+      rolling-out: 2026-09-01`),
+      }),
+    });
+
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('warns when the status has run ahead of every audience', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        status: 'generally-available',
+        timeline: `
+  proposed: 2026-01-15
+  in-development: 2026-03-02
+  rolling-out: 2026-06-01
+  generally-available: 2026-09-01`,
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out
+  - name: Phase 2
+    audience: Everyone else
+    status: proposed`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(messagesOf(result.warnings)).toContain(
+      'This is marked Generally available, but no phase has got past Rolling out — by its own phases, no audience is there yet. Move a phase on, or take the status back.',
+    );
+    expect(result.warnings[0]?.field).toBe('status');
+  });
+
+  it('never warns about a phase that is ahead of its streamline, which is the design', () => {
+    // A pilot reaching general availability while the thing as a whole is still
+    // rolling out is the entire reason phases exist. If this ever starts
+    // warning, the rule has been written in the wrong direction.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: generally-available
+  - name: Phase 2
+    audience: Everyone else
+    status: rolling-out`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('leaves a winding-down streamline alone, being past every stage a phase can hold', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        status: 'deprecated',
+        timeline: `
+  proposed: 2026-01-15
+  rolling-out: 2026-06-01
+  deprecated: 2026-09-01
+  retired: 2027-03-01`,
+        extra: phases(`
+  - name: Phase 1
+    audience: Pilot teams
+    status: rolling-out`),
       }),
     });
 
