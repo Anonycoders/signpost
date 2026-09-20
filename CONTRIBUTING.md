@@ -40,8 +40,8 @@ updates:
       Run `kubectl deprecations --context <your-cluster>` to see whether you are
       affected. The migration guide has the before-and-after manifests.
     actions: # optional: the things somebody has to actually do
-      - Run kubectl deprecations against every cluster you own.
-      - Move any v1beta1 Ingress objects to networking.k8s.io/v1.
+      - Run `kubectl deprecations` against every cluster you own.
+      - Move any v1beta1 Ingress objects to `networking.k8s.io/v1`.
 ```
 
 Updates are append-at-the-top and never edited away: the history is the point.
@@ -98,17 +98,25 @@ past — and because this list is the part that travels.
 
 ```yaml
 actions:
-  - Run kubectl deprecations against every cluster you own.
-  - Move any v1beta1 Ingress objects to networking.k8s.io/v1 before 1 October.
+  - Run `kubectl deprecations` against every cluster you own.
+  - Move any v1beta1 Ingress objects to `networking.k8s.io/v1` before 1 October.
+  - Check the [migration guide](https://example.com/k8s-1-31) for the manifests.
 ```
 
 It shows on the page under **What you need to do**, in the feed, and in the chat
 announcement if your instance sends those — three places a reader might be
 standing when they need it, from one list you wrote once.
 
-One instruction per line, under 200 characters, in plain sentences: these are
-not Markdown, and the feed and chat both carry them as text. Put the reasoning
-in the body and keep these to the doing.
+One instruction per line, under 200 characters. Bold, italic, `code` and links
+work; headings, lists and tables do not, because a line of a list is not the
+place to start a new document. Where the formatting cannot travel — a feed
+summary, a chat message — the line is flattened to its words, so write one that
+still reads without it. Put the reasoning in the body and keep these to the
+doing.
+
+Wrap anything angle-bracketed in backticks: `` `--context <your-cluster>` ``.
+Left bare, `<your-cluster>` looks like a tag and is dropped, taking the thing
+the sentence was about with it. The same is true of an update body.
 
 Quote any line with a `#` in it — `- "Tell us in #devops"`. Unquoted, YAML reads
 the `#` as the start of a comment and throws away the rest of the sentence, and
@@ -250,7 +258,7 @@ Each entry under `updates:`, newest first.
 | `effective` | no | The day it lands on other people, when that is later |
 | `status` | no | The stage this happened in; worked out from the timeline otherwise |
 | `body` | no | The explanation, Markdown, as a block scalar |
-| `actions` | no | What the reader has to do, one per line, plain text — see above |
+| `actions` | no | What the reader has to do, one per line, inline Markdown — see above |
 | `announcement` | no | What to say in chat instead of the body — see below |
 
 ### Reaching an owner on Slack

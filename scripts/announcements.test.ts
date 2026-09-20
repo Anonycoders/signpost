@@ -477,7 +477,10 @@ describe('editing rather than adding', () => {
 });
 
 describe('what the reader has to do', () => {
-  const ACTIONS = ['Pin your chart to 1.31.', 'Tell R&D <platform> which clusters you own.'];
+  // Backticked for the same reason a body backticks it: an action is Markdown
+  // now, and a bare `<platform>` is markup to a Markdown parser. Inside a code
+  // span it survives, and arrives here as the characters the sentence needs.
+  const ACTIONS = ['Pin your chart to 1.31.', 'Tell R&D `<platform>` which clusters you own.'];
 
   const announced = (extra: Record<string, unknown>) =>
     collect({
@@ -508,6 +511,27 @@ describe('what the reader has to do', () => {
       '• Pin your chart to 1.31.',
       '• Tell R&amp;D &lt;platform&gt; which clusters you own.',
     ]);
+  });
+
+  it('sends the words rather than the Markdown they were written in', () => {
+    // Slack has its own formatting language and this is not it. Rather than
+    // translate, the line is flattened the same way the body above it is — the
+    // page shows the emphasis, the chat message shows the instruction, and the
+    // two say the same sentence.
+    const text = announced({
+      actions: ['Pin **every** chart to `1.31` — see [the guide](https://example.com/k8s).'],
+    });
+
+    expect(text.split('\n').at(-1)).toBe('• Pin every chart to 1.31 — see the guide.');
+  });
+
+  it('keeps a number the author typed, because the page keeps it too', () => {
+    // Flattened through the block parser this would arrive as "Redeploy to
+    // staging", while the page still showed the 1. — one instruction, two
+    // readings, depending on where somebody happened to be standing.
+    expect(announced({ actions: ['1. Redeploy to staging'] }).split('\n').at(-1)).toBe(
+      '• 1. Redeploy to staging',
+    );
   });
 
   it('follows an announcement override rather than replacing it', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderMarkdown, toPlainText } from './markdown';
+import { renderInlineMarkdown, renderMarkdown, toPlainInline, toPlainText } from './markdown';
 
 /**
  * This renderer now handles every piece of prose on the site — update bodies,
@@ -109,6 +109,30 @@ describe('plain text', () => {
     });
   });
 
+  /**
+   * Stripping a tag leaves a space, or two paragraphs run together into a word
+   * that is in neither of them. Leaving one where a word merely stopped being
+   * bold is the opposite mistake, and the visible one: the sample's own body
+   * reads "starting **1 October**." and arrived as "starting 1 October ."
+   */
+  describe('where the spaces go', () => {
+    it('keeps punctuation against the word it follows', () => {
+      expect(toPlainText('Waves start **1 October**. Check `kubectl` first.')).toBe(
+        'Waves start 1 October. Check kubectl first.',
+      );
+    });
+
+    it('still keeps two paragraphs apart', () => {
+      expect(toPlainText('First paragraph\n\nSecond paragraph')).toBe(
+        'First paragraph Second paragraph',
+      );
+    });
+
+    it('still keeps two list items apart', () => {
+      expect(toPlainText('- Redeploy\n- Tell your team')).toBe('Redeploy Tell your team');
+    });
+  });
+
   it('cuts a long body at a word boundary', () => {
     const text = toPlainText(`${'alpha bravo '.repeat(50)}end`, 40);
 
@@ -116,5 +140,59 @@ describe('plain text', () => {
     expect(text.length).toBeLessThanOrEqual(41);
     // The cut lands after a whole word, never part-way through one.
     expect(text.slice(0, -1)).toMatch(/(alpha|bravo)$/);
+  });
+});
+
+/**
+ * The inline renderer is for a field that holds a line rather than a passage —
+ * an action. What makes it the right tool is not what it adds but what it never
+ * looks for: an author writing `1. Redeploy` gets the number they typed, and
+ * nothing on this site can grow a heading inside one item of a list.
+ */
+describe('one line of Markdown', () => {
+  it('renders the three things an instruction reaches for', () => {
+    expect(renderInlineMarkdown('Pin **every** chart to `1.31` — see [the guide](/k8s/).')).toBe(
+      'Pin <strong>every</strong> chart to <code>1.31</code> — see <a href="/k8s/">the guide</a>.',
+    );
+  });
+
+  it('leaves block syntax as the characters they are', () => {
+    // Each of these would become an element in a body. Here they are text,
+    // because an action is already one item of a list somebody else is drawing.
+    expect(renderInlineMarkdown('# Not a heading')).toBe('# Not a heading');
+    expect(renderInlineMarkdown('1. Redeploy to staging')).toBe('1. Redeploy to staging');
+    expect(renderInlineMarkdown('- Not a nested bullet')).toBe('- Not a nested bullet');
+  });
+
+  it('drops raw HTML, the same as a body does', () => {
+    expect(renderInlineMarkdown('Run <script>alert(1)</script> nowhere')).toBe(
+      'Run alert(1) nowhere',
+    );
+  });
+});
+
+/**
+ * An action reaches two places that cannot show markup: the feed summary a
+ * reader skims, and the chat message. Both get the words, and the words are
+ * what the page shows — so the three consumers say the same sentence.
+ */
+describe('one line as plain text', () => {
+  it('keeps what the line is about and loses what it is written in', () => {
+    expect(toPlainInline('Pin **every** chart to `1.31` — see [the guide](/k8s/).')).toBe(
+      'Pin every chart to 1.31 — see the guide.',
+    );
+  });
+
+  it('keeps a placeholder inside a code span', () => {
+    expect(toPlainInline('Run `kubectl deprecations --context <your-cluster>` first.')).toBe(
+      'Run kubectl deprecations --context <your-cluster> first.',
+    );
+  });
+
+  it('flattens through the same parser the page renders with', () => {
+    // Not a detail: flattened through the block parser, `1. Redeploy` would
+    // lose its number here while keeping it on the page, and a reader comparing
+    // the chat message to the site would find two different instructions.
+    expect(toPlainInline('1. Redeploy to staging')).toBe('1. Redeploy to staging');
   });
 });

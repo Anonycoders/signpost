@@ -43,6 +43,23 @@ export function renderMarkdown(content: string): string {
 }
 
 /**
+ * The same Markdown, with only the part of it that fits on one line.
+ *
+ * For a field that is a line rather than a passage — an action. Emphasis, a
+ * code span and a link are what an instruction reaches for; a heading or a
+ * table inside one item of a list is not a thing anybody means to write.
+ *
+ * The distinction is the parser's, not a rule applied afterwards: block syntax
+ * is simply never looked for, so `1. Redeploy` keeps its number instead of
+ * quietly becoming a list, and the author sees what they typed.
+ *
+ * Same renderer, so raw HTML is dropped here too.
+ */
+export function renderInlineMarkdown(content: string): string {
+  return marked.parseInline(content, { async: false });
+}
+
+/**
  * The named entities the renderer emits, plus the one authors type by hand.
  *
  * Anything else is left as it was written. A `&copy;` nobody decoded is odd to
@@ -97,13 +114,42 @@ function decodeEntities(text: string): string {
   });
 }
 
-/** The same prose as plain text, for a feed summary or a chat message. */
-export function toPlainText(content: string, limit = 400): string {
-  const text = decodeEntities(renderMarkdown(content).replace(/<[^>]+>/g, ' '))
+/**
+ * The tags that sit inside a sentence rather than around one.
+ *
+ * Stripping markup has to put a space where a paragraph ended, or the last word
+ * of one runs into the first word of the next. It must not put a space where a
+ * word merely stopped being bold, or `Pin the chart to `1.31`.` arrives as
+ * "Pin the chart to 1.31 ." — a space before the full stop that nobody typed
+ * and no reader can explain.
+ */
+const INLINE_TAGS = /^<\/?(a|code|strong|em|del|sup|sub|span)(\s|\/|>)/i;
+
+/** Rendered markup back down to the sentence inside it. */
+function flatten(html: string, limit: number): string {
+  const text = decodeEntities(html.replace(/<[^>]+>/g, (tag) => (INLINE_TAGS.test(tag) ? '' : ' ')))
     .replace(/\s+/g, ' ')
     .trim();
 
   if (text.length <= limit) return text;
   // Cut at a word boundary so the summary does not end mid-word.
   return `${text.slice(0, text.lastIndexOf(' ', limit) || limit).trimEnd()}…`;
+}
+
+/** The same prose as plain text, for a feed summary or a chat message. */
+export function toPlainText(content: string, limit = 400): string {
+  return flatten(renderMarkdown(content), limit);
+}
+
+/**
+ * The same, for a field that holds one line.
+ *
+ * Rendered before it is flattened, rather than sent out as it was typed, so the
+ * plain-text consumers say what the page says. An action reading
+ * `` Pin the chart to `1.31` `` is about the version, not about backticks, and
+ * a link's label is the part a sentence needs — the URL beside it in a chat
+ * message would be the noise.
+ */
+export function toPlainInline(content: string, limit = 400): string {
+  return flatten(renderInlineMarkdown(content), limit);
 }

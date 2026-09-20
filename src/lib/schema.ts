@@ -342,6 +342,13 @@ const updateSchema = strict({
    * `effective`, and a per-action deadline would be a second calendar nobody is
    * watching — one that the timeline, the changes page and the announcer all
    * know nothing about.
+   *
+   * Inline Markdown, and only inline: emphasis, a code span, a link. An API
+   * name written as `networking.k8s.io/v1` is the difference between an
+   * instruction a reader can follow and one they have to squint at. Block
+   * syntax is never looked for, so this stays one line of a list rather than
+   * growing a heading; where it cannot be shown — a feed summary, a chat
+   * message — it is flattened to the words, the same way a body is.
    */
   actions: z
     .array(
@@ -355,7 +362,7 @@ const updateSchema = strict({
     .min(1, { error: 'Either list something under actions or leave the field out.' })
     .optional()
     .describe(
-      'What a reader has to do about this, one thing per line. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.',
+      'What a reader has to do about this, one thing per line. Inline Markdown only — bold, italic, `code`, links. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.',
     ),
   /**
    * What to say about this in a chat announcement, when the body would not

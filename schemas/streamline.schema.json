@@ -264,7 +264,7 @@
             "type": "string"
           },
           "actions": {
-            "description": "What a reader has to do about this, one thing per line. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.",
+            "description": "What a reader has to do about this, one thing per line. Inline Markdown only — bold, italic, `code`, links. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.",
             "minItems": 1,
             "type": "array",
             "items": {

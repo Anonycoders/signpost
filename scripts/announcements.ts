@@ -1,6 +1,6 @@
 import { slugify, updateAnchor } from '../src/lib/anchor';
 import { withBase } from '../src/lib/base';
-import { toPlainText } from '../src/lib/markdown';
+import { toPlainInline, toPlainText } from '../src/lib/markdown';
 import { landsOn } from '../src/lib/updates';
 import type { PhaseData, StreamlineData, TeamData, UpdateData } from '../src/lib/schema';
 
@@ -419,11 +419,17 @@ function bodyFor(subject: Subject): string | undefined {
  * announced, and re-announcing it would teach people that the channel repeats
  * itself. The date and the impact are what make it news; this is detail
  * carried alongside, and the link is there for whoever wants the current list.
+ *
+ * Flattened to words first, then escaped, exactly as the body above is. Slack
+ * has its own formatting language and it is not Markdown; translating between
+ * the two would be a second renderer to keep honest, for the sake of a bold
+ * word in a chat message. What matters is that the instruction arrives, and it
+ * arrives as text.
  */
 function actionsFor(subject: Subject): string[] {
   if (subject.kind !== 'update') return [];
 
-  return (subject.update.actions ?? []).map((action) => `• ${escapeText(action)}`);
+  return (subject.update.actions ?? []).map((action) => `• ${escapeText(toPlainInline(action))}`);
 }
 
 function messageFor(

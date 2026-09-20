@@ -108,7 +108,12 @@ const announced =
 
     {
       item.kind === 'update' && item.update.actions && item.update.actions.length > 0 && (
-        <UpdateActions actions={item.update.actions} class="mt-3" />
+        <UpdateActions
+          actions={item.update.actions}
+          tone={item.update.impact.tone}
+          onTinted={dominant}
+          class="mt-3"
+        />
       )
     }
 

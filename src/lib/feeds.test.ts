@@ -103,6 +103,32 @@ describe('the actions on an update', () => {
     expect(items).toEqual(ACTIONS);
   });
 
+  describe('written with Markdown in them', () => {
+    const MARKED = ['Pin **every** chart to `1.31` — see [the guide](https://acme.test/k8s).'];
+
+    it('are markup in the entry a reader displays', () => {
+      const xml = feed([update({ actions: MARKED })]);
+
+      const parsed = new DOMParser().parseFromString(xml, 'application/xml');
+      const content = parsed.getElementsByTagName('content')[0];
+
+      // One escaping, unwrapped by the reader — the same single layer the body
+      // beside it goes through. Two would show the reader the tags.
+      expect(content?.textContent).toContain(
+        '<li>Pin <strong>every</strong> chart to <code>1.31</code> — see ' +
+          '<a href="https://acme.test/k8s">the guide</a>.</li>',
+      );
+    });
+
+    it('are the words alone in the summary, which carries no markup', () => {
+      const [entry] = toEntries([update({ actions: MARKED })], SITE);
+
+      expect(entry?.summary).toBe(
+        'What you need to do: (1) Pin every chart to 1.31 — see the guide.',
+      );
+    });
+  });
+
   it('leave the entry alone when there are none', () => {
     const [entry] = toEntries([update({ body: 'Ingress moves.' })], SITE);
 

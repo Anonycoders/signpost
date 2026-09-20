@@ -1,7 +1,7 @@
 import { updateAnchor } from './anchor';
 import { escapeXml, type AtomEntry } from './atom';
 import { formatDate } from './date';
-import { renderMarkdown, toPlainText } from './markdown';
+import { renderInlineMarkdown, renderMarkdown, toPlainInline, toPlainText } from './markdown';
 
 /**
  * Turning updates into feed entries.
@@ -56,9 +56,12 @@ function heading(update: FeedUpdate): string {
  * Numbered rather than strung together with a separator. An action is a line an
  * author punctuated as they saw fit, and "Redeploy.; Tell your team." reads
  * like a mistake — a number belongs to the list rather than to the sentence.
+ *
+ * Flattened the same way the body above it is, so an action written with a code
+ * span arrives as the words it is about rather than as backticks.
  */
 function actionSentence(actions: string[]): string {
-  const numbered = actions.map((action, index) => `(${index + 1}) ${action}`);
+  const numbered = actions.map((action, index) => `(${index + 1}) ${toPlainInline(action)}`);
 
   return `What you need to do: ${numbered.join(' ')}`;
 }
@@ -66,12 +69,13 @@ function actionSentence(actions: string[]): string {
 /**
  * The same list as markup, for the entry body a reader displays.
  *
- * Escaped as HTML here and again as XML by the feed writer, exactly as the
- * heading above it is: the reader unwraps one layer when it parses the document
- * and the other when it renders the markup.
+ * Rendered, not escaped: these are markup by the time they get here, the same
+ * as the body beside them, and the feed writer escapes the whole document once
+ * on the way out. The reader unwraps that layer when it parses the document and
+ * finds the markup underneath.
  */
 function actionList(actions: string[]): string {
-  const items = actions.map((action) => `<li>${escapeXml(action)}</li>`).join('');
+  const items = actions.map((action) => `<li>${renderInlineMarkdown(action)}</li>`).join('');
 
   return `<p><strong>What you need to do</strong></p><ul>${items}</ul>`;
 }

@@ -1,4 +1,8 @@
 ---
+import type { Tone } from '@config';
+import { renderInlineMarkdown } from '@/lib/markdown';
+import { toneSurfaceClass, toneTextClass } from '@/lib/tone';
+
 /**
  * The things a reader has to do about an update, kept apart from the prose.
  *
@@ -7,23 +11,83 @@
  * page — and the same list reaches the feed and the chat announcement, so a
  * reader meets it wherever they happen to be standing.
  *
- * Plain strings, never Markdown: a list of things to do is not the place for
- * formatting, and both other consumers of this list are plain text.
+ * The panel takes its colour from the update's impact rather than sitting in
+ * one neutral grey, because "this will break on Tuesday" and "worth knowing,
+ * whenever you get to it" are not the same instruction and should not look
+ * alike from across a room. It is the badge's own tone, so the two agree by
+ * construction.
+ *
+ * Each line is inline Markdown — emphasis, a code span, a link. Deliberately
+ * not the block kind: this is one line of a list, and a heading or a table
+ * inside it would be a paragraph pretending to be a task.
  */
 interface Props {
   actions: string[];
+  /** The impact's tone, so the urgency is visible before anything is read. */
+  tone: Tone;
+  /**
+   * Drop the tint and keep only the tone's ink.
+   *
+   * For the one caller that has already tinted everything around it: the
+   * changes page paints a whole breaking row in the impact's colour, and a
+   * panel of that same colour inside it is not a panel, it is a slightly
+   * different rectangle. Plain on tinted reads as the card it is.
+   */
+  onTinted?: boolean;
   /** Spacing belongs to the caller — the two callers sit in different rhythms. */
   class?: string;
 }
 
-const { actions, class: className } = Astro.props;
+const { actions, tone, onTinted = false, class: className } = Astro.props;
 ---
 
 <div
-  class:list={['rounded-card border border-border bg-surface-muted px-3 py-2.5', className]}
+  class:list={[
+    'rounded-card border px-4 py-3.5',
+    onTinted ? 'border-border bg-surface' : toneSurfaceClass[tone],
+    className,
+  ]}
 >
-  <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted">What you need to do</p>
-  <ul class="mt-1.5 list-disc space-y-1 pl-4 text-sm text-ink-secondary marker:text-ink-muted">
-    {actions.map((action) => <li>{action}</li>)}
+  <p class={`flex items-center gap-1.5 text-sm font-semibold ${toneTextClass[tone]}`}>
+    <svg
+      class="size-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6"></path>
+      <path d="m9 11 3 3L22 4"></path>
+    </svg>
+    What you need to do
+  </p>
+
+  <ul class="mt-2.5 space-y-2">
+    {
+      actions.map((action) => (
+        <li class="flex gap-2.5">
+          {/* A tick rather than a disc: the list is a set of things to finish,
+              and the shape should say so before the words are read. */}
+          <svg
+            class={`mt-1 size-3.5 shrink-0 ${toneTextClass[tone]}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          {/* `.prose` is what renders a body, and an action is the same three
+              things a body can hold inline: a link, a code span, emphasis. */}
+          <span class="prose text-sm" set:html={renderInlineMarkdown(action)} />
+        </li>
+      ))
+    }
   </ul>
 </div>
