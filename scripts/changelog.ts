@@ -212,6 +212,14 @@ export function releaseNotes(text: string, tag: string): string {
     );
   }
 
+  // Before looking for a section, because the alternative is telling somebody
+  // to go and write "## [release-1.2.0]" — a heading this same file rejects.
+  if (!SEMVER.test(version)) {
+    throw new Error(
+      `"${tag}" is not a version. A release tag reads v1.2.3, and the heading it looks for is "## [1.2.3]".`,
+    );
+  }
+
   const section = parseSections(text).find((one) => one.version === version);
 
   if (!section) {
@@ -242,6 +250,11 @@ export function releaseNotes(text: string, tag: string): string {
  */
 export function versionProblem(packageVersion: string, tag: string): string | undefined {
   const version = toVersion(tag);
+
+  // A tag that is not a version at all is somebody else's complaint, and a
+  // louder one. Answering it here would lead with the advice to write
+  // "version": "release-1.2.0" into package.json.
+  if (!SEMVER.test(version)) return undefined;
   if (packageVersion === version) return undefined;
 
   return `package.json says ${packageVersion}, the tag says ${version}. Set "version" to ${version}, commit, and move the tag onto that commit.`;

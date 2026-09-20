@@ -124,6 +124,16 @@ describe('the notes for one release', () => {
     expect(() => releaseNotes(SAMPLE, 'Unreleased')).toThrow(/no tag for Unreleased/);
   });
 
+  /**
+   * Otherwise the advice is to go and write `## [release-1.2.0] - …`, a heading
+   * `changelogProblems` would then reject. Nothing is more disheartening than a
+   * tool that tells you to do the thing it is about to complain about.
+   */
+  it('refuse a tag that is not a version, without suggesting a heading for it', () => {
+    expect(() => releaseNotes(SAMPLE, 'release-1.2.0')).toThrow(/is not a version/);
+    expect(() => releaseNotes(SAMPLE, 'release-1.2.0')).not.toThrow(/\[release-1\.2\.0\] - /);
+  });
+
   it('refuse a section with nothing under it', () => {
     const empty = SAMPLE.replace(/\*\*Upgrading:\*\* Nothing to do — merge.*?- A mistake\./s, '');
 
@@ -135,6 +145,11 @@ describe('the two places the version number lives', () => {
   it('agree, or say which is which', () => {
     expect(versionProblem('1.2.0', 'v1.2.0')).toBeUndefined();
     expect(versionProblem('1.1.0', 'v1.2.0')).toContain('package.json says 1.1.0');
+  });
+
+  it('say nothing when the tag is not a version, so the real complaint leads', () => {
+    expect(versionProblem('1.2.0', 'Unreleased')).toBeUndefined();
+    expect(versionProblem('1.2.0', 'release-1.2.0')).toBeUndefined();
   });
 });
 
