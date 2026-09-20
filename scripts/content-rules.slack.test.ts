@@ -59,8 +59,7 @@ channel: "#platform"
 `;
 
 function streamline(title: string) {
-  return `---
-title: ${title}
+  return `title: ${title}
 team: platform
 category: platform
 status: live
@@ -76,7 +75,6 @@ updates:
   - date: 2026-03-02
     impact: info
     title: Cache is live
----
 `;
 }
 
@@ -86,8 +84,8 @@ describe('slack member IDs with no workspace to point at', () => {
     // the same instruction per streamline would bury the rest of the report.
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
-      'content/streamlines/platform/runner-fleet.md': streamline('Runner fleet'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
+      'content/streamlines/platform/runner-fleet.yaml': streamline('Runner fleet'),
     });
 
     const configWarnings = result.warnings.filter(
@@ -103,11 +101,11 @@ describe('slack member IDs with no workspace to point at', () => {
   it('names the single file when only one carries ids', () => {
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
     });
 
     const configWarning = result.warnings.find((warning) => warning.file === 'site.config.ts');
 
-    expect(configWarning?.message).toContain('content/streamlines/platform/build-cache.md');
+    expect(configWarning?.message).toContain('content/streamlines/platform/build-cache.yaml');
   });
 });

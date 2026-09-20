@@ -47,8 +47,7 @@ function streamline(overrides: Partial<Record<string, string>> = {}) {
     title: Rollout has started`,
   } = overrides;
 
-  return `---
-title: Kubernetes upgrade
+  return `title: Kubernetes upgrade
 team: ${team}
 category: infrastructure
 status: ${status}
@@ -57,10 +56,9 @@ owners:
   - name: Jana Okafor
     github: janaokafor
 timeline:${timeline}${extra}
+body: |
+  Body text.
 updates:${updates}
----
-
-Body text.
 `;
 }
 
@@ -71,7 +69,7 @@ describe('valid content', () => {
   it('accepts a well-formed team and streamline', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline(),
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline(),
     });
 
     expect(result.errors).toEqual([]);
@@ -81,7 +79,7 @@ describe('valid content', () => {
   it('allows a streamline to skip lifecycle stages', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'generally-available',
         timeline: `
   proposed: 2026-01-15
@@ -97,7 +95,7 @@ describe('team references', () => {
   it('rejects a streamline whose team does not exist, and lists the ones that do', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/platform/kubernetes-upgrade.md': streamline({ team: 'platform' }),
+      'content/streamlines/platform/kubernetes-upgrade.yaml': streamline({ team: 'platform' }),
     });
 
     expect(messagesOf(result.errors)).toContain('There is no team called "platform"');
@@ -108,12 +106,12 @@ describe('team references', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
       'content/teams/ai-platform.yaml': 'name: AI Platform\nmission: Shared model access.\n',
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({ team: 'ai-platform' }),
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({ team: 'ai-platform' }),
     });
 
     const problem = result.errors.find((error) => error.field === 'team');
     expect(problem?.message).toContain('team must be "devops"');
-    expect(problem?.file).toBe('content/streamlines/devops/kubernetes-upgrade.md');
+    expect(problem?.file).toBe('content/streamlines/devops/kubernetes-upgrade.yaml');
   });
 });
 
@@ -121,7 +119,7 @@ describe('timeline coherence', () => {
   it('rejects stages dated out of lifecycle order, naming both stages', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         timeline: `
   proposed: 2026-05-01
   in-development: 2026-03-02
@@ -138,7 +136,7 @@ describe('timeline coherence', () => {
   it('requires a date for the stage the streamline is currently in', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'rolling-out',
         timeline: `
   proposed: 2026-01-15
@@ -152,7 +150,7 @@ describe('timeline coherence', () => {
   it('rejects an unknown stage name in the timeline', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         timeline: `
   proposed: 2026-01-15
   rolling-out: 2026-09-01
@@ -166,7 +164,7 @@ describe('timeline coherence', () => {
   it('rejects a date that is not a real day', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         timeline: `
   proposed: "2026-02-30"
   rolling-out: 2026-09-01`,
@@ -182,7 +180,7 @@ describe('deprecation safety', () => {
   it('refuses to let a deprecated streamline omit its retirement date', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/jenkins.md': streamline({
+      'content/streamlines/devops/jenkins.yaml': streamline({
         status: 'deprecated',
         timeline: `
   generally-available: 2021-04-05
@@ -196,7 +194,7 @@ describe('deprecation safety', () => {
   it('accepts a deprecated streamline that states its retirement date', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/jenkins.md': streamline({
+      'content/streamlines/devops/jenkins.yaml': streamline({
         status: 'deprecated',
         timeline: `
   generally-available: 2021-04-05
@@ -213,27 +211,27 @@ describe('cross-references', () => {
   it('rejects a supersedes pointing at a streamline that does not exist', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: '\nsupersedes: devops/does-not-exist',
       }),
     });
 
     expect(messagesOf(result.errors)).toContain(
-      'content/streamlines/devops/does-not-exist.md',
+      'content/streamlines/devops/does-not-exist.yaml',
     );
   });
 
   it('resolves a supersedes that does exist', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/jenkins.md': streamline({
+      'content/streamlines/devops/jenkins.yaml': streamline({
         status: 'deprecated',
         timeline: `
   generally-available: 2021-04-05
   deprecated: 2026-02-16
   retired: 2027-03-31`,
       }),
-      'content/streamlines/devops/actions.md': streamline({
+      'content/streamlines/devops/actions.yaml': streamline({
         extra: '\nsupersedes: devops/jenkins',
       }),
     });
@@ -246,8 +244,7 @@ describe('field-level rules', () => {
   it('requires at least one owner', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/orphan.md': `---
-title: Orphaned work
+      'content/streamlines/devops/orphan.yaml': `title: Orphaned work
 team: devops
 category: infrastructure
 status: proposed
@@ -256,7 +253,6 @@ owners: []
 timeline:
   proposed: 2026-01-15
 updates: []
----
 `,
     });
 
@@ -268,7 +264,7 @@ updates: []
     // owner without inventing a GitHub account or publishing an email address.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: jana.okafor',
       ),
@@ -280,7 +276,7 @@ updates: []
   it('accepts an owner reachable both ways', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    github: janaokafor\n    slack: jana.okafor',
       ),
@@ -292,7 +288,7 @@ updates: []
   it('rejects a slack handle written with the @', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: "@jana.okafor"',
       ),
@@ -306,7 +302,7 @@ updates: []
   it('rejects a slack handle written as a URL', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: https://example.slack.com/team/U024BE7LH',
       ),
@@ -320,7 +316,7 @@ updates: []
   it('accepts a member ID alongside the handle', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: jana.okafor\n    slackId: U024BE7LH',
       ),
@@ -332,7 +328,7 @@ updates: []
   it('accepts an Enterprise Grid member ID', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: jana.okafor\n    slackId: W1H63D8SZ',
       ),
@@ -346,7 +342,7 @@ updates: []
     // link straight to a Slack page that does not exist.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: jana.okafor\n    slackId: jana.okafor',
       ),
@@ -358,7 +354,7 @@ updates: []
   it('rejects a summary too long to fit on a card', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/wordy.md': streamline().replace(
+      'content/streamlines/devops/wordy.yaml': streamline().replace(
         'summary: Cluster-wide upgrade that affects workloads on removed beta APIs.',
         `summary: ${'x'.repeat(240)}`,
       ),
@@ -370,7 +366,7 @@ updates: []
   it('reports the field path for a problem inside an update', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     impact: catastrophic
@@ -385,7 +381,7 @@ updates: []
   it('accepts an effective date after the posting date', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     effective: 2026-10-01
@@ -400,7 +396,7 @@ updates: []
   it('rejects an effective date that is not after the posting date', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     effective: 2026-08-01
@@ -417,7 +413,7 @@ updates: []
   it('rejects an effective date equal to the posting date', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     effective: 2026-09-10
@@ -429,14 +425,14 @@ updates: []
     expect(result.errors.some((error) => error.field === 'updates[0].effective')).toBe(true);
   });
 
-  it('rejects frontmatter that is not valid YAML', () => {
+  it('rejects a file that is not valid YAML', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/broken.md': '---\ntitle: [unclosed\n---\n',
+      'content/streamlines/devops/broken.yaml': 'title: [unclosed\n',
     });
 
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]?.file).toBe('content/streamlines/devops/broken.md');
+    expect(result.errors[0]?.file).toBe('content/streamlines/devops/broken.yaml');
   });
 });
 
@@ -451,7 +447,7 @@ describe('updates that share one identity', () => {
   it('rejects two updates posted on the same day under the same title', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     impact: info
@@ -473,7 +469,7 @@ describe('updates that share one identity', () => {
     // The slug stops at 48 characters, so both land on the same anchor.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     impact: breaking
@@ -493,7 +489,7 @@ describe('updates that share one identity', () => {
     // and the date is part of the anchor, so the two do not collide.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         updates: `
   - date: 2026-09-10
     impact: info
@@ -512,7 +508,7 @@ describe('warnings', () => {
   it('flags a status its own timeline has already moved past', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'rolling-out',
         timeline: `
   proposed: 2026-01-15
@@ -532,7 +528,7 @@ describe('warnings', () => {
     // happened. A status only lags once one of them has.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'rolling-out',
         timeline: `
   proposed: 2026-01-15
@@ -549,7 +545,7 @@ describe('warnings', () => {
     // never turns it on should never be told about a field it has no use for.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({}),
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({}),
     });
 
     expect(result.warnings.filter((warning) => warning.field?.includes('nnounce'))).toEqual([]);
@@ -558,7 +554,7 @@ describe('warnings', () => {
   it('flags an active streamline that has gone quiet, without failing the build', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/forgotten.md': streamline({
+      'content/streamlines/devops/forgotten.yaml': streamline({
         updates: `
   - date: 2020-01-06
     impact: info
@@ -573,7 +569,7 @@ describe('warnings', () => {
   it('does not flag a retired streamline as stale', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/old-tool.md': streamline({
+      'content/streamlines/devops/old-tool.yaml': streamline({
         status: 'retired',
         timeline: `
   generally-available: 2019-06-01
@@ -621,7 +617,7 @@ describe('rollout phases', () => {
   it('accepts a streamline with phases', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: PILOT_THEN_EVERYONE,
       }),
     });
@@ -633,7 +629,7 @@ describe('rollout phases', () => {
   it('accepts a phase with no timeline of its own', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -649,7 +645,7 @@ describe('rollout phases', () => {
     // before an earlier one finishes, and may even be further along.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -671,7 +667,7 @@ describe('rollout phases', () => {
   it('rejects two phases with the same name', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -691,7 +687,7 @@ describe('rollout phases', () => {
   it('rejects two phase names that differ only in their punctuation', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1 — pilot
     audience: Pilot teams
@@ -711,7 +707,7 @@ describe('rollout phases', () => {
   it('rejects a phase with no audience', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     status: proposed`),
@@ -726,7 +722,7 @@ describe('rollout phases', () => {
   it('rejects a phase whose audience is blank', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: ""
@@ -743,7 +739,7 @@ describe('rollout phases', () => {
   it('rejects a phase with no name', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - audience: Pilot teams
     status: proposed`),
@@ -758,7 +754,7 @@ describe('rollout phases', () => {
     // phase status: the audience is not deprecated, the product is.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -774,7 +770,7 @@ describe('rollout phases', () => {
   it('rejects a terminal stage as a phase status', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -790,7 +786,7 @@ describe('rollout phases', () => {
   it('rejects a phase timeline that runs backwards', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -810,7 +806,7 @@ describe('rollout phases', () => {
   it('rejects an unknown stage in a phase timeline', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -826,7 +822,7 @@ describe('rollout phases', () => {
   it('warns, without blocking, when a phase claims a stage its own date has not reached', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         // Reaching far enough forward to cover the phase below, so this test
         // gets the one warning it is about and not the envelope rule as well.
         timeline: COVERS_2099,
@@ -849,7 +845,7 @@ describe('rollout phases', () => {
   it('warns when a phase has already passed the stage it claims', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -869,7 +865,7 @@ describe('rollout phases', () => {
   it('does not warn about a future date for a stage the phase has not claimed', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         timeline: COVERS_2099,
         extra: phases(`
   - name: Phase 1
@@ -895,7 +891,7 @@ describe('a streamline against its own phases', () => {
     // until the following spring.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -920,7 +916,7 @@ describe('a streamline against its own phases', () => {
   it('accepts a timeline that ends exactly where the last phase does', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -936,7 +932,7 @@ describe('a streamline against its own phases', () => {
   it('warns when the status has run ahead of every audience', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'generally-available',
         timeline: `
   proposed: 2026-01-15
@@ -966,7 +962,7 @@ describe('a streamline against its own phases', () => {
     // warning, the rule has been written in the wrong direction.
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         extra: phases(`
   - name: Phase 1
     audience: Pilot teams
@@ -984,7 +980,7 @@ describe('a streamline against its own phases', () => {
   it('leaves a winding-down streamline alone, being past every stage a phase can hold', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
         status: 'deprecated',
         timeline: `
   proposed: 2026-01-15
@@ -1015,7 +1011,7 @@ describe('slack member IDs that cannot link', () => {
   it('warns when an ID has no handle to attach to', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    github: janaokafor\n    slackId: U024BE7LH',
       ),
@@ -1030,7 +1026,7 @@ describe('slack member IDs that cannot link', () => {
   it('says nothing when the handles carry no IDs', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': streamline().replace(
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline().replace(
         '    github: janaokafor',
         '    slack: jana.okafor',
       ),

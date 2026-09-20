@@ -10,7 +10,13 @@ import { streamlineSchema, teamSchema } from './lib/schema';
  *
  * Ids come from the file path:
  *   content/teams/devops.yaml                  -> "devops"
- *   content/streamlines/devops/k8s-1-31.md     -> "devops/k8s-1-31"
+ *   content/streamlines/devops/k8s-1-31.yaml   -> "devops/k8s-1-31"
+ *
+ * Both collections are YAML, which is what makes `schemas/` useful: an editor
+ * can only attach a JSON Schema to a whole file, never to a frontmatter block,
+ * so the format is what buys a contributor completion and inline errors as
+ * they type. The long prose lives in a `body:` block scalar, the same way an
+ * update's body always has.
  */
 
 const teams = defineCollection({
@@ -19,7 +25,7 @@ const teams = defineCollection({
 });
 
 const streamlines = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './content/streamlines' }),
+  loader: glob({ pattern: '**/*.{yaml,yml}', base: './content/streamlines' }),
   schema: streamlineSchema,
 });
 

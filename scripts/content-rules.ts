@@ -466,7 +466,7 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
       errors.push({
         file: rel(file),
         field: 'supersedes',
-        message: `"${data.supersedes}" does not exist. Expected a file at content/streamlines/${data.supersedes}.md.`,
+        message: `"${data.supersedes}" does not exist. Expected a file at content/streamlines/${data.supersedes}.yaml.`,
       });
     }
   }

@@ -229,7 +229,7 @@ rule wins: a change to `src/` needs the platform team, while a change to
 
 `content/` arrives empty — `content/teams/` and `content/streamlines/` hold
 nothing but a `.gitkeep` so that Git carries the directories at all. Add one
-YAML file per team and one Markdown file per streamline, exactly as
+YAML file per team and one per streamline, exactly as
 [CONTRIBUTING.md](../CONTRIBUTING.md) describes — that guide is written for your
 colleagues, and it is the same process for you.
 

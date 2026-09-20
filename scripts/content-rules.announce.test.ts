@@ -68,8 +68,7 @@ channel: "#platform"${extra}
 }
 
 function streamline(title: string, extra = '') {
-  return `---
-title: ${title}
+  return `title: ${title}
 team: platform
 category: platform
 status: live
@@ -83,7 +82,6 @@ updates:
   - date: 2026-03-02
     impact: info
     title: Cache is live
----
 `;
 }
 
@@ -107,8 +105,8 @@ describe('announcements with nowhere to go', () => {
     // instruction per file would be longer without being more helpful.
     const result = fixture({
       'content/teams/platform.yaml': team(),
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
-      'content/streamlines/platform/runner-fleet.md': streamline('Runner fleet'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
+      'content/streamlines/platform/runner-fleet.yaml': streamline('Runner fleet'),
     });
 
     const warnings = about(result, 'announcements.channel');
@@ -124,18 +122,18 @@ describe('announcements with nowhere to go', () => {
     // Here the fix really is per-file: the others prove the config is fine.
     const result = fixture({
       'content/teams/platform.yaml': team(),
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'Build cache',
         '\nannounceChannel: "#build-news"',
       ),
-      'content/streamlines/platform/runner-fleet.md': streamline('Runner fleet'),
+      'content/streamlines/platform/runner-fleet.yaml': streamline('Runner fleet'),
     });
 
     const warnings = about(result, 'announceChannel');
 
     expect(result.errors).toEqual([]);
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]?.file).toBe('content/streamlines/platform/runner-fleet.md');
+    expect(warnings[0]?.file).toBe('content/streamlines/platform/runner-fleet.yaml');
     expect(warnings[0]?.message).toContain('content/teams/platform.yaml');
     expect(about(result, 'announcements.channel')).toEqual([]);
   });
@@ -143,7 +141,7 @@ describe('announcements with nowhere to go', () => {
   it('is satisfied by a channel on the team', () => {
     const result = fixture({
       'content/teams/platform.yaml': team('\nannounceChannel: "#platform-news"'),
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
     });
 
     expect(result.errors).toEqual([]);
@@ -153,7 +151,7 @@ describe('announcements with nowhere to go', () => {
   it('says nothing about a streamline that has asked to stay quiet', () => {
     const result = fixture({
       'content/teams/platform.yaml': team(),
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'Build cache',
         '\nannounce: false',
       ),
@@ -168,7 +166,7 @@ describe('the channel field itself', () => {
   it('rejects a bare name, which Slack will not resolve', () => {
     const result = fixture({
       'content/teams/platform.yaml': team('\nannounceChannel: platform-news'),
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
     });
 
     expect(result.errors.map((error) => error.message).join('\n')).toContain(
@@ -179,7 +177,7 @@ describe('the channel field itself', () => {
   it('accepts a channel ID, which is what survives a rename', () => {
     const result = fixture({
       'content/teams/platform.yaml': team('\nannounceChannel: C0123ABCD'),
-      'content/streamlines/platform/build-cache.md': streamline('Build cache'),
+      'content/streamlines/platform/build-cache.yaml': streamline('Build cache'),
     });
 
     expect(result.errors).toEqual([]);

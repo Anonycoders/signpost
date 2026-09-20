@@ -1,10 +1,9 @@
 ---
-import { render } from 'astro:content';
-
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Container from '@/components/Container.astro';
 import Badge from '@/components/Badge.astro';
 import Callout from '@/components/Callout.astro';
+import Markdown from '@/components/Markdown.astro';
 import RolloutPhases from '@/components/RolloutPhases.astro';
 import StageStepper from '@/components/StageStepper.astro';
 import UpdateEntry from '@/components/UpdateEntry.astro';
@@ -45,8 +44,14 @@ const [supersedes, supersededBy] = await Promise.all([
   getSupersededBy(streamline),
 ]);
 
-const { Content } = await render(streamline.entry);
-const hasBody = (streamline.entry.body ?? '').trim().length > 0;
+/*
+ * The body is Markdown inside the YAML file, rendered the same way an update's
+ * body is — which is what `Markdown.astro` is for. Astro's own pipeline is not
+ * involved: it is reserved for `docs/`, where the guides need heading anchors
+ * and the cross-reference plugin, neither of which a streamline body has ever
+ * used.
+ */
+const body = (streamline.body ?? '').trim();
 
 /**
  * A dated terminal stage is the site's most consequential fact: this thing is
@@ -202,14 +207,12 @@ const related = [
         </section>
 
         {
-          hasBody && (
+          body && (
             <section aria-labelledby="detail-heading">
               <h2 id="detail-heading" class="sr-only">
                 Detail
               </h2>
-              <div class="prose">
-                <Content />
-              </div>
+              <Markdown content={body} />
             </section>
           )
         }

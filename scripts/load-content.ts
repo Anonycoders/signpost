@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
-import matter from 'gray-matter';
 import { load as loadYaml } from 'js-yaml';
 
 import { streamlineSchema, teamSchema } from '../src/lib/schema';
@@ -56,9 +55,9 @@ export interface StreamlineEntry {
   teamSlug: string;
   slug: string;
   /**
-   * The frontmatter as YAML gave it, before the schema saw it. Present as soon
-   * as the block parses, so a caller can cross-check a single field on a file
-   * the schema has otherwise rejected.
+   * The document as YAML gave it, before the schema saw it. Present as soon as
+   * the file parses, so a caller can cross-check a single field on a file the
+   * schema has otherwise rejected.
    */
   raw?: Record<string, unknown>;
   /** Absent when the file could not be read, or the schema rejected it. */
@@ -153,8 +152,8 @@ export function loadStreamlines(contentDir: string, repoRoot: string): Load<Stre
   const dir = join(contentDir, 'streamlines');
   const entries: StreamlineEntry[] = [];
 
-  for (const file of listFiles(dir, ['.md'])) {
-    const id = idUnder(file, dir, /\.md$/);
+  for (const file of listFiles(dir, ['.yaml', '.yml'])) {
+    const id = idUnder(file, dir, /\.(yaml|yml)$/);
     const segments = id.split('/');
     const at = repoRelative(file, repoRoot);
 
@@ -166,7 +165,7 @@ export function loadStreamlines(contentDir: string, repoRoot: string): Load<Stre
       entry.problems.push({
         file: at,
         message:
-          'Streamlines live one directory deep, as content/streamlines/<team-slug>/<streamline-slug>.md.',
+          'Streamlines live one directory deep, as content/streamlines/<team-slug>/<streamline-slug>.yaml.',
       });
       continue;
     }
@@ -179,20 +178,20 @@ export function loadStreamlines(contentDir: string, repoRoot: string): Load<Stre
       continue;
     }
 
-    let parsedFile: matter.GrayMatterFile<string>;
+    let raw: unknown;
     try {
-      parsedFile = matter(readFileSync(file, 'utf8'));
+      raw = loadYaml(readFileSync(file, 'utf8'));
     } catch (error) {
       entry.problems.push({
         file: at,
-        message: `The frontmatter block is not valid YAML. ${(error as Error).message}`,
+        message: `This file is not valid YAML. ${(error as Error).message}`,
       });
       continue;
     }
 
-    entry.raw = parsedFile.data as Record<string, unknown>;
+    entry.raw = raw as Record<string, unknown>;
 
-    const parsed = streamlineSchema.safeParse(parsedFile.data);
+    const parsed = streamlineSchema.safeParse(raw);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         entry.problems.push({

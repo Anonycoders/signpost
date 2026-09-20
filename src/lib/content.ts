@@ -95,7 +95,8 @@ export interface Streamline {
   href: string;
   editUrl: string;
   supersedesId?: string;
-  entry: CollectionEntry<'streamlines'>;
+  /** The long prose under the timeline, as Markdown. Absent when there is none. */
+  body?: string;
 }
 
 /** A file in the content repository, on whichever host it lives on. */
@@ -281,9 +282,9 @@ async function load() {
       updates: [],
       isTerminal: isTerminalStage(data.status),
       href: url(`/streamlines/${entry.id}`),
-      editUrl: blobUrl(`content/streamlines/${entry.id}.md`),
+      editUrl: blobUrl(`content/streamlines/${entry.id}.yaml`),
       supersedesId: data.supersedes,
-      entry,
+      body: data.body,
     };
 
     // Newest first. Sorted here rather than required of authors, who append

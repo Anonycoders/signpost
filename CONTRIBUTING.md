@@ -108,12 +108,11 @@ links:
 ```
 
 **2. Create the streamline file** at
-`content/streamlines/<your-team>/<streamline-slug>.md`. The directory must be
+`content/streamlines/<your-team>/<streamline-slug>.yaml`. The directory must be
 your team's slug — that is what wires up ownership and review. Copy this whole
 block and edit it:
 
-```markdown
----
+```yaml
 title: Kubernetes 1.31 upgrade
 team: devops # must match the directory this file is in
 category: infrastructure
@@ -139,24 +138,25 @@ timeline:
 links:
   - label: Migration guide
     url: https://github.com/example-org/devops-runbooks/blob/main/k8s-1-31.md
+body: |
+  ## Why we are doing this
+
+  Optional long-form Markdown, shown on the detail page. Motivation, scope,
+  FAQ — whatever a team that depends on you would want to read. Everything
+  under `body: |` is indented two spaces; that indentation is not part of
+  what the page shows.
+
+  ## Who this affects
+
+  Be specific about who has to do something, and who can ignore this entirely.
+
+  ## What we need from you
+
+  The ask, with the deadline.
 updates:
   - date: 2026-09-01
     impact: info
     title: All staging clusters are running 1.31
----
-
-## Why we are doing this
-
-Optional long-form Markdown, shown on the detail page. Motivation, scope, FAQ —
-whatever a team that depends on you would want to read.
-
-## Who this affects
-
-Be specific about who has to do something, and who can ignore this entirely.
-
-## What we need from you
-
-The ask, with the deadline.
 ```
 
 **3. Open a pull request** with that one file. Your team owns the directory, so
@@ -170,7 +170,7 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 
 ## Field reference
 
-### Streamline frontmatter
+### Streamline fields
 
 | Field | Required | Notes |
 | --- | --- | --- |
@@ -186,6 +186,7 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `phases` | no | The rollout, audience by audience — see below |
 | `announceChannel` | no | Send this one's announcements somewhere else — see below |
 | `announce` | no | `false` keeps this one out of the announcements |
+| `body` | no | The long explanation, Markdown, as a block scalar |
 | `updates` | no | Newest first |
 
 ### Reaching an owner on Slack
@@ -341,7 +342,7 @@ content mistake instead of being buried in a stack trace.
 It names the file, the field and what to do:
 
 ```
-error content/streamlines/devops/jenkins-pipelines.md
+error content/streamlines/devops/jenkins-pipelines.yaml
     timeline: A deprecated streamline must say when it will be retired. Add a `retired` date to the timeline so the teams depending on it know their deadline.
     updates[0].effective: effective (2026-08-01) is not after date (2026-09-08). Use effective only when a change lands later than the day you are posting about it; if they are the same day, remove it.
 
@@ -352,7 +353,7 @@ error content/streamlines/devops/jenkins-pipelines.md
 
 - A `team` that has no file in `content/teams/`, or does not match the
   directory the file is in
-- A file outside `content/streamlines/<team>/<slug>.md`, or a slug that is not
+- A file outside `content/streamlines/<team>/<slug>.yaml`, or a slug that is not
   lowercase-with-dashes
 - An unknown `status`, `category` or `impact` — the message lists the valid
   values

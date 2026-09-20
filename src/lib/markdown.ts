@@ -1,9 +1,10 @@
+import Slugger from 'github-slugger';
 import { Marked } from 'marked';
 
 /**
- * Renders the short Markdown that lives inside YAML fields — update bodies,
- * mainly. The long-form body of a streamline file goes through Astro's own
- * pipeline instead.
+ * Renders the Markdown that lives inside YAML fields: update bodies, and the
+ * long body of a streamline. Astro's own pipeline is reserved for `docs/`,
+ * whose guides need a table of contents and the cross-reference plugin.
  *
  * Shared by the page components and the Atom feeds so a reader sees the same
  * thing in their feed reader as on the site.
@@ -18,10 +19,26 @@ const marked = new Marked({
   breaks: false,
   renderer: {
     html: () => '',
+    /**
+     * Headings carry an id, the same slug GitHub would give them.
+     *
+     * Not decoration: a long body is written with `## What you need to do`
+     * sections, and those are what somebody pastes into a chat message when
+     * they want a colleague to read one part of it. The slugger is per-render
+     * so two bodies on one page each start from a clean slate — within a body,
+     * a repeated heading still gets `-1` appended, as it always has.
+     */
+    heading({ depth, text, tokens }) {
+      const inner = this.parser.parseInline(tokens);
+      return `<h${depth} id="${slugger.slug(text)}">${inner}</h${depth}>\n`;
+    },
   },
 });
 
+const slugger = new Slugger();
+
 export function renderMarkdown(content: string): string {
+  slugger.reset();
   return marked.parse(content, { async: false });
 }
 

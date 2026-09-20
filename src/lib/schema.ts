@@ -287,6 +287,21 @@ export const streamlineSchema = z.object({
    */
   announce: z.boolean().optional(),
   links: z.array(linkSchema).optional(),
+  /**
+   * The long explanation, in Markdown, shown under the timeline: why this is
+   * happening, what a reader has to do, what it means for them.
+   *
+   * A block scalar, like an update body:
+   *
+   *     body: |
+   *       ## Why now
+   *
+   *       The 1.30 series goes out of support in March.
+   *
+   * Optional. Plenty of streamlines are a title, a summary and a set of dates,
+   * and a page with nothing under the timeline is a complete page.
+   */
+  body: z.string().optional(),
   updates: z.array(updateSchema).default([]),
 });
 

@@ -36,8 +36,11 @@ export default defineConfig({
      * The guides in `docs/` are written to be read on GitHub, so their links
      * are repository paths; this rewrites them for a reader of the site. The
      * plugin is a factory: it is handed the file being compiled and excludes
-     * itself from every document that is not a guide, so streamline bodies —
-     * which share this pipeline — are compiled without it.
+     * itself from every document that is not a guide, which is what keeps a
+     * stray `.md` anywhere else from having its links rewritten.
+     *
+     * Content does not come through here at all. `content/` is YAML, and the
+     * Markdown inside it is rendered by `src/lib/markdown.ts`.
      */
     processor: satteri({
       hastPlugins: [

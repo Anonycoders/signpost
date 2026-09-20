@@ -75,8 +75,7 @@ channel: "#platform"
 `;
 
 function streamline(status: string, timeline: string) {
-  return `---
-title: Build cache
+  return `title: Build cache
 team: platform
 category: platform
 status: ${status}
@@ -88,7 +87,6 @@ updates:
   - date: 2026-03-02
     impact: info
     title: Cache is live
----
 `;
 }
 
@@ -98,7 +96,7 @@ describe('the anti-surprise rule on a renamed lifecycle', () => {
   it('names the organization own stages, not "deprecated" and "retired"', () => {
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'sunsetting',
         `
   idea: 2025-11-01
@@ -117,7 +115,7 @@ describe('the anti-surprise rule on a renamed lifecycle', () => {
   it('is satisfied by a date on the renamed terminal stage', () => {
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'sunsetting',
         `
   idea: 2025-11-01
@@ -133,7 +131,7 @@ describe('the anti-surprise rule on a renamed lifecycle', () => {
   it('leaves a stage that is merely not terminal alone', () => {
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'live',
         `
   idea: 2025-11-01
@@ -149,7 +147,7 @@ describe('slack member IDs on a configured workspace', () => {
   it('says nothing, because the ids now have somewhere to point', () => {
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'live',
         `
   idea: 2025-11-01
@@ -171,7 +169,7 @@ describe('announcements with a site-wide channel', () => {
     // the fallback exists, so nothing can be worked out and then dropped.
     const result = fixture({
       'content/teams/platform.yaml': TEAM,
-      'content/streamlines/platform/build-cache.md': streamline(
+      'content/streamlines/platform/build-cache.yaml': streamline(
         'live',
         `
   idea: 2025-11-01

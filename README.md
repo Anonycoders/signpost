@@ -1,6 +1,6 @@
 # Signpost
 
-**A static site that answers "what is the platform team doing, and what is about to change?"** — built from Markdown files in a Git repository, deployed to GitHub Pages, with no database and no server.
+**A static site that answers "what is the platform team doing, and what is about to change?"** — built from YAML files in a Git repository, deployed to GitHub Pages, with no database and no server.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -65,7 +65,7 @@ If `npm install` refuses to run, it is `engine-strict` doing its job: this needs
 
 ## Publishing your team's work
 
-One Markdown file per streamline, in `content/streamlines/<team>/<slug>.md`. Frontmatter holds the structured part — stage, owners, timeline dates, links — and `updates:` is the running log of announcements, newest first:
+One YAML file per streamline, in `content/streamlines/<team>/<slug>.yaml`. It holds the structured part — stage, owners, timeline dates, links — and `updates:` is the running log of announcements, newest first:
 
 ```yaml
 updates:
@@ -112,23 +112,23 @@ Everything an organization needs to change lives in [`site.config.ts`](site.conf
 
 ```
 content/
-  teams/<slug>.yaml            one file per team
-  streamlines/<team>/<slug>.md one file per effort
-site.config.ts                 everything an organization changes
+  teams/<slug>.yaml               one file per team
+  streamlines/<team>/<slug>.yaml  one file per effort
+site.config.ts                    everything an organization changes
 src/
-  pages/                       routes
-  lib/                         roadmap, changes, timeline, feeds — unit-tested
-  components/                  Astro components
+  pages/                          routes
+  lib/                            roadmap, changes, timeline, feeds — unit-tested
+  components/                     Astro components
 scripts/
-  content-rules.ts             the validation rules
-  validate-content.ts          the CLI wrapper CI runs
-  announcements.ts             what is worth announcing — pure, no IO
-  announce.ts                  the CLI that reads, posts and records
+  content-rules.ts                the validation rules
+  validate-content.ts             the CLI wrapper CI runs
+  announcements.ts                what is worth announcing — pure, no IO
+  announce.ts                     the CLI that reads, posts and records
 .github/
-  workflows/ci.yml             validate + check + test on every PR
-  workflows/deploy.yml         build + publish to Pages on main and nightly
-  workflows/announce.yml       post what changed to Slack, if configured
-  CODEOWNERS                   which team reviews which directory
+  workflows/ci.yml                validate + check + test on every PR
+  workflows/deploy.yml            build + publish to Pages on main and nightly
+  workflows/announce.yml          post what changed to Slack, if configured
+  CODEOWNERS                      which team reviews which directory
 ```
 
 Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.com). No client-side framework: the filters are under a hundred lines of vanilla JavaScript over server-rendered cards, and every page still renders its content without them.

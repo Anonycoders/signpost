@@ -2,7 +2,8 @@
 import { renderMarkdown } from '@/lib/markdown';
 
 /**
- * Renders a Markdown string from frontmatter — update bodies, mainly.
+ * Renders a Markdown string held in a YAML field — update bodies and the long
+ * body of a streamline.
  *
  * The rendering itself lives in `src/lib/markdown.ts` so the Atom feeds can
  * reuse it; see the notes there about dropped raw HTML.

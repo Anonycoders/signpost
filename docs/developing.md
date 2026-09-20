@@ -78,11 +78,11 @@ rendered HTML goes through exactly these modules:
 
 ```
 content/teams/<slug>.yaml
-content/streamlines/<team>/<slug>.md
+content/streamlines/<team>/<slug>.yaml
 docs/*.md
    │
    │  src/content.config.ts     glob loaders; the id is the path, so
-   │                            content/streamlines/devops/secret-scanning.md
+   │                            content/streamlines/devops/secret-scanning.yaml
    │                            becomes "devops/secret-scanning"
    ▼
 src/lib/schema.ts               Zod shapes for one file
@@ -308,6 +308,15 @@ paper. If you need a colour that no token provides, add a token.
 — all render inside `.prose`, a component layer at the bottom of `global.css`
 covering headings, lists, links, tables, blockquotes and code. It is built from
 the same tokens, so it follows the theme like everything else.
+
+Two renderers produce that Markdown, and which one runs depends only on where
+the text came from. Anything inside a content file — a streamline's `body`, an
+update's `body` — goes through `src/lib/markdown.ts`, which is `marked` with
+raw HTML dropped and heading ids added. The guides in `docs/` are the only
+thing that goes through Astro's own pipeline, because they are the only thing
+that needs a table of contents and the cross-reference plugin. The feeds reuse
+the first of those, so a reader sees the same HTML in their feed reader as on
+the page.
 
 ---
 
