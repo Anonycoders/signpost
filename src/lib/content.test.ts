@@ -11,7 +11,7 @@ import { streamlineSchema } from './schema';
  * under test is the resolution, not Astro's loader.
  */
 
-/** Frontmatter as an author would write it, parsed by the real schema. */
+/** A streamline file as an author would write it, parsed by the real schema. */
 function streamlineData(overrides: Record<string, unknown> = {}) {
   return streamlineSchema.parse({
     title: 'Kubernetes upgrade',

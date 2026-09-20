@@ -30,7 +30,7 @@ export interface FeedUpdate {
 }
 
 /** Absolute URL of the update's place on its streamline page. */
-export function updateUrl(update: FeedUpdate, site: URL): string {
+function updateUrl(update: FeedUpdate, site: URL): string {
   return new URL(`${update.streamline.href}#${updateAnchor(update)}`, site).href;
 }
 
@@ -49,7 +49,7 @@ function heading(update: FeedUpdate): string {
   return `<p><strong>${label}</strong>${when}</p>`;
 }
 
-export function toEntry(update: FeedUpdate, site: URL): AtomEntry {
+function toEntry(update: FeedUpdate, site: URL): AtomEntry {
   const link = updateUrl(update, site);
   const body = update.body ? renderMarkdown(update.body) : '';
 

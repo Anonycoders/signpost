@@ -197,7 +197,7 @@ function missingTeam(slug: string): Team {
 const DOC_ORDER = ['using', 'adopting', 'developing'];
 
 /**
- * A sparse stage -> date map from the frontmatter, resolved into stage objects
+ * A sparse stage -> date map from the file, resolved into stage objects
  * in lifecycle order. Shared by a streamline's own timeline and each of its
  * phases, so both orderings come from the same place.
  */
@@ -334,10 +334,6 @@ export async function getStreamlines(): Promise<Streamline[]> {
 /** The written guides, in reading order. */
 export async function getDocs(): Promise<Doc[]> {
   return (await loadOnce()).docs;
-}
-
-export async function getDoc(slug: string): Promise<Doc | undefined> {
-  return (await getDocs()).find((doc) => doc.slug === slug);
 }
 
 export async function getTeam(slug: string): Promise<Team | undefined> {

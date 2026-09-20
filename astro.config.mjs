@@ -26,21 +26,17 @@ export default defineConfig({
     /*
      * No syntax highlighting. The default highlighter ships one fixed palette,
      * which reads as a dark rectangle dropped into a light page; the site's own
-     * surface and ink tokens already follow the theme. Nothing in `content/`
-     * uses a fenced block, so this only ever applies to the guides.
+     * surface and ink tokens already follow the theme.
      */
     syntaxHighlight: false,
     /**
      * The default Markdown processor, with one plugin added.
      *
-     * The guides in `docs/` are written to be read on GitHub, so their links
-     * are repository paths; this rewrites them for a reader of the site. The
-     * plugin is a factory: it is handed the file being compiled and excludes
-     * itself from every document that is not a guide, which is what keeps a
-     * stray `.md` anywhere else from having its links rewritten.
-     *
-     * Content does not come through here at all. `content/` is YAML, and the
-     * Markdown inside it is rendered by `src/lib/markdown.ts`.
+     * This pipeline exists for the guides in `docs/`, and nothing else reaches
+     * it: `content/` is YAML, and the Markdown inside it is rendered by
+     * `src/lib/markdown.ts`. The guides are written to be read on GitHub, so
+     * their links are repository paths; the plugin rewrites them for a reader
+     * of the site, and excludes itself from any document that is not a guide.
      */
     processor: satteri({
       hastPlugins: [

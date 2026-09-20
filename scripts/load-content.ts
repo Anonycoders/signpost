@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import { load as loadYaml } from 'js-yaml';
+import { z } from 'zod';
 
 import { streamlineSchema, teamSchema } from '../src/lib/schema';
 import type { StreamlineData, TeamData } from '../src/lib/schema';
@@ -28,7 +29,7 @@ import type { StreamlineData, TeamData } from '../src/lib/schema';
 export interface Problem {
   /** Repository-relative path, so the message can be pasted into an editor. */
   file: string;
-  /** Frontmatter field the problem belongs to, if it maps to one. */
+  /** The field the problem belongs to, if it maps to one. */
   field?: string;
   message: string;
 }
@@ -75,11 +76,14 @@ export interface Load<Entry> {
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function listFiles(dir: string, extensions: string[]): string[] {
+const YAML_EXTENSIONS = ['.yaml', '.yml'];
+const YAML_EXTENSION = /\.ya?ml$/;
+
+function listFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
 
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
-    .filter((entry) => extensions.some((ext) => entry.endsWith(ext)))
+    .filter((entry) => YAML_EXTENSIONS.some((ext) => entry.endsWith(ext)))
     .map((entry) => join(dir, entry))
     .sort();
 }
@@ -93,20 +97,61 @@ function fieldPath(path: readonly PropertyKey[]): string {
 }
 
 /** The part of a path under `dir`, without its extension, as an id. */
-function idUnder(file: string, dir: string, extension: RegExp): string {
+function idUnder(file: string, dir: string): string {
   return file
     .slice(dir.length + 1)
-    .replace(extension, '')
+    .replace(YAML_EXTENSION, '')
     .split(sep)
     .join('/');
+}
+
+interface Parsed<Data> {
+  /** What YAML made of the file. Absent only when the YAML itself failed. */
+  raw?: Record<string, unknown>;
+  /** Absent when anything at all stopped the file from being read. */
+  data?: Data;
+  problems: Problem[];
+}
+
+/**
+ * Read one file and parse it against its schema.
+ *
+ * Shared by both loaders because since content became YAML they do exactly the
+ * same thing here — a team file and a streamline file differ in their schema
+ * and in nothing else. Two copies would be two chances for the same mistake in
+ * the two halves of `content/` to be reported in different words.
+ */
+function parseFile<Data>(file: string, at: string, schema: z.ZodType<Data>): Parsed<Data> {
+  let raw: unknown;
+  try {
+    raw = loadYaml(readFileSync(file, 'utf8'));
+  } catch (error) {
+    return {
+      problems: [{ file: at, message: `This file is not valid YAML. ${(error as Error).message}` }],
+    };
+  }
+
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      raw: raw as Record<string, unknown>,
+      problems: parsed.error.issues.map((issue) => ({
+        file: at,
+        field: fieldPath(issue.path) || undefined,
+        message: issue.message,
+      })),
+    };
+  }
+
+  return { raw: raw as Record<string, unknown>, data: parsed.data, problems: [] };
 }
 
 export function loadTeams(contentDir: string, repoRoot: string): Load<TeamEntry> {
   const dir = join(contentDir, 'teams');
   const entries: TeamEntry[] = [];
 
-  for (const file of listFiles(dir, ['.yaml', '.yml'])) {
-    const slug = idUnder(file, dir, /\.(yaml|yml)$/);
+  for (const file of listFiles(dir)) {
+    const slug = idUnder(file, dir);
     const at = repoRelative(file, repoRoot);
     const entry: TeamEntry = { file, slug, problems: [] };
     entries.push(entry);
@@ -119,29 +164,8 @@ export function loadTeams(contentDir: string, repoRoot: string): Load<TeamEntry>
       continue;
     }
 
-    let raw: unknown;
-    try {
-      raw = loadYaml(readFileSync(file, 'utf8'));
-    } catch (error) {
-      entry.problems.push({
-        file: at,
-        message: `This file is not valid YAML. ${(error as Error).message}`,
-      });
-      continue;
-    }
-
-    const parsed = teamSchema.safeParse(raw);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        entry.problems.push({
-          file: at,
-          field: fieldPath(issue.path) || undefined,
-          message: issue.message,
-        });
-      }
-      continue;
-    }
-
+    const parsed = parseFile(file, at, teamSchema);
+    entry.problems.push(...parsed.problems);
     entry.data = parsed.data;
   }
 
@@ -152,8 +176,8 @@ export function loadStreamlines(contentDir: string, repoRoot: string): Load<Stre
   const dir = join(contentDir, 'streamlines');
   const entries: StreamlineEntry[] = [];
 
-  for (const file of listFiles(dir, ['.yaml', '.yml'])) {
-    const id = idUnder(file, dir, /\.(yaml|yml)$/);
+  for (const file of listFiles(dir)) {
+    const id = idUnder(file, dir);
     const segments = id.split('/');
     const at = repoRelative(file, repoRoot);
 
@@ -178,31 +202,9 @@ export function loadStreamlines(contentDir: string, repoRoot: string): Load<Stre
       continue;
     }
 
-    let raw: unknown;
-    try {
-      raw = loadYaml(readFileSync(file, 'utf8'));
-    } catch (error) {
-      entry.problems.push({
-        file: at,
-        message: `This file is not valid YAML. ${(error as Error).message}`,
-      });
-      continue;
-    }
-
-    entry.raw = raw as Record<string, unknown>;
-
-    const parsed = streamlineSchema.safeParse(raw);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        entry.problems.push({
-          file: at,
-          field: fieldPath(issue.path) || undefined,
-          message: issue.message,
-        });
-      }
-      continue;
-    }
-
+    const parsed = parseFile(file, at, streamlineSchema);
+    entry.raw = parsed.raw;
+    entry.problems.push(...parsed.problems);
     entry.data = parsed.data;
   }
 

@@ -106,7 +106,7 @@ export const phaseStageIds = siteConfig.lifecycle
 const PHASE_AUDIENCE_REQUIRED =
   'A phase needs an audience — say who gets it in this phase, for example "Pilot teams" or "Everyone".';
 
-export const phaseSchema = z.object({
+const phaseSchema = z.object({
   name: z
     .string({ error: 'A phase needs a name.' })
     .min(1, { error: 'A phase needs a name.' })
@@ -147,7 +147,7 @@ const channelSchema = z
     'A Slack channel to post into: #platform-news, or the channel ID from View channel details, C0123ABCD. A bare name without the # will not resolve.',
   );
 
-export const linkSchema = z.object({
+const linkSchema = z.object({
   label: z
     .string()
     .min(1, { error: 'A link needs a label.' })
@@ -157,7 +157,7 @@ export const linkSchema = z.object({
     .describe('The full URL, starting with http:// or https://.'),
 });
 
-export const ownerSchema = z.object({
+const ownerSchema = z.object({
   name: z
     .string()
     .min(1, { error: 'An owner needs a name.' })
@@ -248,7 +248,7 @@ export const teamSchema = z.object({
     .describe('Runbooks, dashboards, docs — anything a reader of the team page should have.'),
 });
 
-export const updateSchema = z.object({
+const updateSchema = z.object({
   date: dateSchema.describe(
     'The day you are posting this. Updates appear on the streamline page in this order.',
   ),

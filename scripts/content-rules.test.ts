@@ -587,7 +587,7 @@ describe('warnings', () => {
 });
 
 describe('rollout phases', () => {
-  /** Frontmatter for a `phases:` block, indented to sit under the key. */
+  /** A `phases:` block, indented to sit under the key. */
   const phases = (yaml: string) => `\nphases:${yaml}`;
 
   /**

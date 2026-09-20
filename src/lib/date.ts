@@ -49,12 +49,11 @@ export function today(): Date {
 }
 
 /** Whole days from today to `date`. Negative when the date has passed. */
-export function daysFromToday(date: Date): number {
+function daysFromToday(date: Date): number {
   return Math.round((date.getTime() - today().getTime()) / MS_PER_DAY);
 }
 
 export const isFuture = (date: Date): boolean => daysFromToday(date) > 0;
-export const isPast = (date: Date): boolean => daysFromToday(date) < 0;
 
 /**
  * How far away something is, in words: "in 3 weeks", "today", "2 months ago".

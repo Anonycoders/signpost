@@ -1,11 +1,15 @@
 /**
  * The one place the docs link rules are attached to the Markdown pipeline.
  *
- * That pipeline is shared: it renders the long-form body of every streamline as
- * well as the guides. So this is written as a plugin *factory*. Sätteri calls
- * the factory once per document with the file being compiled, and a factory
- * that returns `false` is left out of that document's pipeline entirely. A
- * streamline is therefore not merely skipped over — the plugin never runs on it.
+ * Written as a plugin *factory*: Sätteri calls it once per document with the
+ * file being compiled, and a factory that returns `false` is left out of that
+ * document's pipeline entirely, rather than running and skipping over it.
+ *
+ * Today that guard has little to do — `docs/*.md` is the only Markdown Astro
+ * compiles, since content is YAML and the repository's own README and
+ * CONTRIBUTING are not pages. It stays because the cost is one comparison and
+ * the failure it prevents is silent: a `.md` page added under `src/pages/`
+ * would otherwise have its links rewritten as though it were a guide.
  *
  * The rules themselves live in `doc-links.ts` and know nothing about Markdown.
  *

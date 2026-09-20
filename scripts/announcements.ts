@@ -24,7 +24,7 @@ import type { PhaseData, StreamlineData, TeamData, UpdateData } from '../src/lib
 // The ledger
 // ---------------------------------------------------------------------------
 
-export const LEDGER_VERSION = 1;
+const LEDGER_VERSION = 1;
 
 export interface LedgerEntry {
   /**
@@ -191,8 +191,8 @@ export interface CollectInput {
   maxPerRun?: number;
 }
 
-export const DEFAULT_LOOKBACK_DAYS = 14;
-export const DEFAULT_MAX_PER_RUN = 10;
+const DEFAULT_LOOKBACK_DAYS = 14;
+const DEFAULT_MAX_PER_RUN = 10;
 
 const MS_PER_DAY = 86_400_000;
 const iso = (date: Date): string => date.toISOString().slice(0, 10);

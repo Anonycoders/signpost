@@ -126,7 +126,7 @@ function loadOnce() {
 
 Every accessor — `getTeams`, `getStreamlines`, `getTeam`, `getStreamline`,
 `getStreamlinesForTeam`, `getSuperseded`, `getSupersededBy`, `getAllUpdates`,
-`getDocs`, `getDoc` — goes through `loadOnce()`. A page with twenty routes parses the content once.
+`getDocs` — goes through `loadOnce()`. A page with twenty routes parses the content once.
 **Do not call `getCollection` anywhere else.** If you need a new shape of the
 data, add an accessor here.
 
