@@ -1,0 +1,69 @@
+name: Release
+
+# Publishes a GitHub Release when a version tag is pushed, using the notes
+# already written in CHANGELOG.md.
+#
+# Nothing here decides what the release says. A person wrote that, one line at a
+# time, as the changes landed; this only moves it from a file into the place
+# people look. If the section for the tag is missing, the job fails rather than
+# publishing an empty release — an empty release is not noticed until somebody
+# goes looking for what changed, which is months later.
+#
+# Inert in a fork that never tags. Forks are welcome to tag their own versions
+# if it helps them track what they have merged; nothing else in Signpost reads
+# these tags.
+#
+# The full check suite runs before publishing. It has almost certainly already
+# run on this commit, and it is repeated because a tag can be pushed from
+# anywhere — a release is the one artefact that outlives a mistake.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  # To create the release. Nothing is pushed to a branch.
+  contents: write
+
+jobs:
+  release:
+    name: Publish the release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # First, because it is the step most likely to fail and the cheapest to
+      # run: whoever pushed the tag is still watching.
+      - name: Take the notes from CHANGELOG.md
+        env:
+          TAG: ${{ github.ref_name }}
+        run: npm run --silent release-notes -- "$TAG" > release-notes.md
+
+      - name: Validate content
+        run: npm run validate
+
+      - name: Check the editor schemas are current
+        run: npm run schema -- --check
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      - name: Build site
+        run: npm run build
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --title "$TAG" --notes-file release-notes.md

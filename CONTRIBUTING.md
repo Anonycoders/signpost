@@ -571,6 +571,17 @@ opening the PR; anything that changes what a contributor sees when they get a
 file wrong should come with a test asserting the new wording, because those
 messages are the product.
 
+If the change is one anybody would notice — a new capability, a fix, anything
+that alters what a field means — add a line for it under `## [Unreleased]` in
+[CHANGELOG.md](CHANGELOG.md), written the way you would explain it to someone
+who has just merged. A typo or a tidy-up does not need one; nothing enforces
+this in CI, because a gate that blocks a one-word fix is a gate people learn to
+route around. If your change means a fork has to *do* something after merging,
+say so in that section's `**Upgrading:**` note — you are the only person who
+knows, and by release day nobody will reconstruct it.
+[docs/releasing.md](docs/releasing.md) explains what the version numbers
+promise.
+
 ## Getting help
 
 If something here is wrong, out of date, or does not explain itself, open an

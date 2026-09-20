@@ -23,6 +23,7 @@ things are before you change one of them.
 - [CI](#ci)
 - [Deploy](#deploy)
 - [Announcements](#announcements)
+- [Releases](#releases)
 - [What not to hardcode](#what-not-to-hardcode)
 
 ---
@@ -639,6 +640,38 @@ To see what a run would say, without a token and without writing anything:
 npm run announce -- --dry-run
 ```
 
+## Releases
+
+[`.github/workflows/release.yml`](../.github/workflows/release.yml) runs on a
+`v*` tag, takes that version's section out of
+[`CHANGELOG.md`](../CHANGELOG.md), runs the full gate, and creates the GitHub
+Release with those notes as the body. Nothing generates the notes; a person
+wrote them as the changes landed.
+
+[`scripts/changelog.ts`](../scripts/changelog.ts) is the parser, split the same
+way the announcer is: pure functions over the text of the file, a `main()` that
+reads from disk, and no third dependency. It is the piece that decides what the
+format *is* — `## [1.2.3] - 2026-09-21`, the six Keep a Changelog categories, a
+link definition per heading, and an `**Upgrading:**` note in every section
+including `Unreleased`.
+
+All of that is asserted in `scripts/changelog.test.ts`, against the real
+committed file, rather than as a step in `ci.yml`. The distinction is the same
+one the validator draws: a contributor who *forgets* a changelog line should
+hear that from a reviewer, because a CI gate on it would block a typo fix and
+teach people to write "no changelog needed" in every description. A contributor
+who breaks the *format* should hear it from the machine immediately, because the
+workflow that reads it runs once, on a tag nobody can take back.
+
+To see a release exactly as it would be published:
+
+```bash
+npm run --silent release-notes -- v0.1.0
+```
+
+Who releases, when, and what the numbers promise a fork are in
+[docs/releasing.md](releasing.md).
+
 ---
 
 ## What not to hardcode
@@ -669,5 +702,8 @@ rename its lifecycle and a fork that has to rewrite your code.
 
 Run the full gate, keep the diff to one concern, and — if you changed anything a
 contributor reads when they get a file wrong — add the test that asserts the new
-wording. [CONTRIBUTING.md](../CONTRIBUTING.md#changing-the-site-itself) has the
-rest, and the [Code of Conduct](../CODE_OF_CONDUCT.md) applies.
+wording. If the change is one a person merging would want to know about, add its
+line under `## [Unreleased]` in [CHANGELOG.md](../CHANGELOG.md), and say in that
+section's `**Upgrading:**` note what a fork has to do about it.
+[CONTRIBUTING.md](../CONTRIBUTING.md#changing-the-site-itself) has the rest, and
+the [Code of Conduct](../CODE_OF_CONDUCT.md) applies.

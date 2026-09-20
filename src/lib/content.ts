@@ -190,13 +190,14 @@ function missingTeam(slug: string): Team {
 
 /**
  * The order the guides are offered in: the one for readers, then the one for
- * organizations adopting the site, then the one for people changing its code.
+ * organizations adopting the site, then the one for people changing its code,
+ * then the one for the handful of people who cut a version of it.
  *
  * This is a preference about reading order, not a registry. A guide that is not
  * named here still appears — after these, alphabetically — so dropping a file
  * into `docs/` is all it takes to publish it.
  */
-const DOC_ORDER = ['using', 'adopting', 'developing'];
+const DOC_ORDER = ['using', 'adopting', 'developing', 'releasing'];
 
 /**
  * A sparse stage -> date map from the file, resolved into stage objects

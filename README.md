@@ -126,10 +126,13 @@ scripts/
   json-schema.ts                  regenerates schemas/ from the Zod schemas
   announcements.ts                what is worth announcing — pure, no IO
   announce.ts                     the CLI that reads, posts and records
+  changelog.ts                    reads CHANGELOG.md for the release notes
+CHANGELOG.md                      what changed, hand-written, per version
 .github/
   workflows/ci.yml                validate + check + test on every PR
   workflows/deploy.yml            build + publish to Pages on main and nightly
   workflows/announce.yml          post what changed to Slack, if configured
+  workflows/release.yml           publish a GitHub Release on a v* tag
   CODEOWNERS                      which team reviews which directory
 ```
 
@@ -140,6 +143,8 @@ Built with [Astro](https://astro.build) and [Tailwind CSS](https://tailwindcss.c
 ## Contributing to Signpost itself
 
 Bug reports, ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md#changing-the-site-itself) and the [Code of Conduct](CODE_OF_CONDUCT.md). **[docs/developing.md](docs/developing.md)** is the tour of the code: the data flow file by file, where the two validation layers live, and what must never be hardcoded. If you have adopted this somewhere, we would genuinely like to hear what you had to change.
+
+Updates are released as versions, and the version number is written for you: a new major means your fork has to do something after merging, anything else means merge and carry on. [CHANGELOG.md](CHANGELOG.md) says what changed and, for every entry, what it costs to take it — [docs/releasing.md](docs/releasing.md) has the rules behind both.
 
 ## License
 
