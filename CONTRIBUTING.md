@@ -281,6 +281,10 @@ cannot carry, or written for someone who is already reading the page. Either way
 the title and a link to the update are put around it, so an announcement can
 never leave a reader with no way through to the detail.
 
+Write it as plain sentences rather than chat markup. `&`, `<` and `>` arrive on
+the screen as you typed them — in a title too — so `Q&A` and `<beta>` come out
+whole instead of being read as a link that was never there.
+
 ### Rollout phases
 
 When something arrives in waves, say so. **Phases are audiences, not tasks** — a

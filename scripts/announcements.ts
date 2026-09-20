@@ -291,6 +291,38 @@ interface Wording {
   impact: (impactId: string) => string;
 }
 
+/**
+ * Slack's three control characters, in text Signpost did not write.
+ *
+ * `&`, `<` and `>` are how mrkdwn marks up links and mentions, so a title that
+ * contains one is not shown — it is parsed. `Q&A` starts an entity that eats
+ * what follows it, and `<beta>` vanishes into a link that was never there.
+ * Slack's rule is that the three become HTML entities wherever they are not
+ * doing that job, which in a streamline title or a team name is always.
+ *
+ * Everything out of a content file goes through this, the `announcement`
+ * override included. No field is documented as carrying Slack markup, and a
+ * rule with one exception is a rule somebody writes past.
+ */
+function escapeText(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * The same, for the label half of `<url|label>`.
+ *
+ * Slack documents the delimiter and says nothing at all about a second `|`
+ * inside the label, so a pipe in a title lands on unspecified behaviour: it may
+ * be printed, or it may take the URL with it and leave a broken link. Rather
+ * than depend on an answer nobody has written down, the label never carries
+ * one. A slash reads as the author meant it and cannot be mistaken for the
+ * delimiter. The URLs are built from slugs and never contain a pipe, so this is
+ * the only half that can.
+ */
+function escapeLabel(text: string): string {
+  return escapeText(text).replace(/\|/g, '/');
+}
+
 function formatDay(value: Date | string, locale: string): string {
   const date = typeof value === 'string' ? new Date(`${value}T00:00:00Z`) : value;
 
@@ -316,7 +348,7 @@ function sentenceFor(subject: Subject, previous: string | undefined, words: Word
   const { locale } = words;
 
   if (subject.kind === 'stage') {
-    const label = words.label(subject.stageId);
+    const label = escapeText(words.label(subject.stageId));
     const [was] = (previous ?? '').split('|');
 
     if (was && was !== iso(subject.date)) {
@@ -327,8 +359,8 @@ function sentenceFor(subject: Subject, previous: string | undefined, words: Word
   }
 
   if (subject.kind === 'phase') {
-    const label = words.label(subject.stageId);
-    const who = `${subject.phase.name}, for ${subject.phase.audience}`;
+    const label = escapeText(words.label(subject.stageId));
+    const who = `${escapeText(subject.phase.name)}, for ${escapeText(subject.phase.audience)}`;
     const [was] = (previous ?? '').split('|');
 
     if (was && was !== iso(subject.date)) {
@@ -339,9 +371,9 @@ function sentenceFor(subject: Subject, previous: string | undefined, words: Word
   }
 
   const { update } = subject;
-  const impact = words.impact(update.impact);
+  const impact = escapeText(words.impact(update.impact));
   const lands = landsOn(update);
-  const title = `*${update.title}*`;
+  const title = `*${escapeText(update.title)}*`;
 
   if (previous) {
     const [wasDate, wasImpact] = previous.split('|');
@@ -351,7 +383,7 @@ function sentenceFor(subject: Subject, previous: string | undefined, words: Word
     }
 
     if (wasImpact && wasImpact !== update.impact) {
-      return `${title} — ${impact}, was ${words.impact(wasImpact)}.`;
+      return `${title} — ${impact}, was ${escapeText(words.impact(wasImpact))}.`;
     }
   }
 
@@ -369,8 +401,8 @@ function bodyFor(subject: Subject): string | undefined {
   // An override was written for chat, so it goes out as written. A body was
   // written for the page, so it is flattened first — Markdown that a browser
   // renders arrives in Slack as its own punctuation.
-  if (subject.update.announcement) return subject.update.announcement.trim();
-  if (subject.update.body) return toPlainText(subject.update.body, 400);
+  if (subject.update.announcement) return escapeText(subject.update.announcement.trim());
+  if (subject.update.body) return escapeText(toPlainText(subject.update.body, 400));
 
   return undefined;
 }
@@ -387,7 +419,7 @@ function messageFor(
   const href = subject.kind === 'update' ? `${page}#${updateAnchor(subject.update)}` : page;
 
   const lines = [
-    `<${href}|${streamline.data.title}> · ${teamName}`,
+    `<${href}|${escapeLabel(streamline.data.title)}> · ${escapeText(teamName)}`,
     sentenceFor(subject, previous, words),
   ];
 

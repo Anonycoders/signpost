@@ -262,6 +262,89 @@ describe('a change to something already known', () => {
   });
 });
 
+/**
+ * A title is not shown by Slack, it is parsed. `&`, `<` and `>` are how mrkdwn
+ * marks up links and mentions, so a streamline called "Q&A <beta>" arrives
+ * mangled or half-missing unless the three are sent as entities — and the one
+ * character the docs say nothing about, a `|` inside a link label, is left to
+ * chance unless it never gets there.
+ */
+describe('text Slack would otherwise parse', () => {
+  const TITLE = 'Q&A <beta> rollout | phase 1';
+
+  /** Already known, under a title nobody sanitised on the way in. */
+  const known = () => streamline({ title: TITLE });
+
+  /** The same streamline, one update later. */
+  const changed = () =>
+    streamline({
+      title: TITLE,
+      updates: [
+        { date: '2026-09-18', impact: 'info', title: 'Rollout has started' },
+        {
+          date: '2026-09-19',
+          impact: 'breaking',
+          title: 'Drop <legacy> & retire the | shim',
+          announcement: 'Move off <legacy> before R&D switch it off.',
+        },
+      ],
+    });
+
+  const announce = () =>
+    collect({
+      ledger: seeded(known()),
+      streamlines: [{ id: 'devops/kubernetes-upgrade', data: changed() }],
+      teams: new Map([
+        ['devops', team({ name: 'R&D <core>', announceChannel: '#platform-news' })],
+      ]),
+    });
+
+  it('sends every field as entities, and keeps the pipe out of the link label', () => {
+    const text = announce().announcements[0]?.text ?? '';
+
+    // The pipe becomes a slash rather than a second delimiter of unknown effect.
+    expect(text).toContain('|Q&amp;A &lt;beta&gt; rollout / phase 1> · R&amp;D &lt;core&gt;');
+    expect(text).toContain('*Drop &lt;legacy&gt; &amp; retire the | shim*');
+    expect(text).toContain('Move off &lt;legacy&gt; before R&amp;D switch it off.');
+  });
+
+  it('leaves nothing unescaped anywhere in the message', () => {
+    // The invariant rather than a list of fields: the only angle brackets in a
+    // message are the ones this file put around the link, and every `&` opens
+    // one of the three entities. A field added later that forgets to escape
+    // fails here without anyone having to remember to add a case.
+    const text = announce().announcements[0]?.text ?? '';
+
+    expect(text.match(/[<>]/g)).toEqual(['<', '>']);
+    expect(text).not.toMatch(/&(?!amp;|lt;|gt;)/);
+  });
+
+  it('escapes a phase name and its audience', () => {
+    const result = collect({
+      ledger: seeded(),
+      streamlines: [
+        {
+          id: 'devops/kubernetes-upgrade',
+          data: streamline({
+            phases: [
+              {
+                name: 'Phase 2 <pilot>',
+                audience: 'R&D and <everyone else>',
+                status: 'rolling-out',
+                timeline: { 'rolling-out': '2026-10-01' },
+              },
+            ],
+          }),
+        },
+      ],
+    });
+
+    expect(result.announcements[0]?.text).toContain(
+      'Phase 2 &lt;pilot&gt;, for R&amp;D and &lt;everyone else&gt;: Rolling out on 1 October 2026.',
+    );
+  });
+});
+
 describe('editing rather than adding', () => {
   it('treats a reworded title as the same update, and says nothing', () => {
     const ledger = seeded();

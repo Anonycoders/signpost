@@ -264,7 +264,7 @@
             "type": "string"
           },
           "announcement": {
-            "description": "What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way.",
+            "description": "What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way. Plain sentences, not chat markup.",
             "type": "string",
             "minLength": 1,
             "maxLength": 1000

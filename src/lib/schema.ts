@@ -338,6 +338,10 @@ const updateSchema = strict({
    * Without it the announcement carries the body, shortened. Either way the
    * title and a link to the update are added around it, so an override can
    * never leave a reader with no way through to the detail.
+   *
+   * Plain sentences, not chat markup: `&`, `<` and `>` are shown as you typed
+   * them rather than read as Slack's link syntax. Writing `<url|label>` by hand
+   * puts those characters on the screen; the link is already there anyway.
    */
   announcement: z
     .string()
@@ -345,7 +349,7 @@ const updateSchema = strict({
     .max(1000, { error: 'Keep an announcement under 1000 characters — the page holds the detail.' })
     .optional()
     .describe(
-      'What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way.',
+      'What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way. Plain sentences, not chat markup.',
     ),
 });
 
