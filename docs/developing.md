@@ -271,7 +271,7 @@ for working on the site but not for writing content. Neither of those two files
 carries comments: they are committed JSON and the rest of the repository's JSON
 parses as JSON.
 
-Three things about it are deliberate, and each one is load-bearing:
+Four things about it are deliberate, and each one is load-bearing:
 
 **It is generated.** The interesting fields — `status`, `category`, `impact` —
 enumerate ids from `site.config.ts`. A fork that renames `deprecated` to
@@ -285,6 +285,19 @@ that only existed after `npm run schema` would be missing exactly when it is
 wanted. So CI runs `npm run schema -- --check` and fails on drift — that step
 exists because the generated-and-committed pair is otherwise only as fresh as
 whoever last remembered.
+
+**The objects are closed.** Every object in `src/lib/schema.ts` goes through the
+local `strict()` helper, so an unrecognised key is an error and the generated
+schema carries `additionalProperties: false`. The point is less the strictness
+than the agreement: an editor underlining a field that CI then accepts teaches a
+contributor to ignore the editor. What it catches is the failure with no
+symptom — `timelien:` on an open object parses, validates, builds and deploys,
+and the only trace is dates missing from a page nobody is looking at. The one
+key that is allowed everywhere without meaning anything is `$schema`, because
+the same language server reads it and a closed object would otherwise reject a
+file for pointing at its own schema. A misspelled key inside a `timeline` gets
+the list of stages rather than the generic message, which is the second argument
+to `strict()`.
 
 **Dates are collapsed to one string.** `dateSchema` is a union of `Date` and
 `string`, because YAML hands over an unquoted `2026-01-15` already parsed.

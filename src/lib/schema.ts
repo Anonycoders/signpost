@@ -25,6 +25,50 @@ function enumOf(values: string[], hint: string) {
   });
 }
 
+/** What someone is told about a key that is in no schema. */
+type UnknownKeys = (keys: string[]) => string;
+
+const quoted = (keys: string[]) => keys.map((key) => `"${key}"`).join(', ');
+
+const unknownField: UnknownKeys = (keys) =>
+  keys.length === 1
+    ? `There is no ${quoted(keys)} field here. Check the spelling — your editor offers the fields that belong.`
+    : `There are no ${quoted(keys)} fields here. Check the spelling — your editor offers the fields that belong.`;
+
+/**
+ * Every object below is closed: a key that is not in its shape is a mistake,
+ * not an extension.
+ *
+ * This is what puts `additionalProperties: false` into `schemas/`, and the
+ * agreement matters more than the strictness. An editor that flagged a field
+ * the validator then accepted would be teaching a contributor to ignore it.
+ *
+ * What it catches is the quiet kind of mistake. `timelien:` on an open object
+ * parses, validates, builds and deploys — with the dates missing from the page
+ * and not one word said about it anywhere.
+ */
+function strict<Shape extends z.ZodRawShape>(shape: Shape, unknown: UnknownKeys = unknownField) {
+  return z.strictObject(shape, {
+    error: (issue) => (issue.code === 'unrecognized_keys' ? unknown(issue.keys) : undefined),
+  });
+}
+
+/**
+ * The other way to point an editor at the schema.
+ *
+ * Signpost puts the `# yaml-language-server:` modeline on the first line of
+ * every content file, and that is what CONTRIBUTING.md hands out. But the same
+ * language server also reads a `$schema` key, and a closed object would turn
+ * that perfectly reasonable second way into a validation error on a file that
+ * is otherwise correct. Nothing here reads the value.
+ */
+const schemaKey = z
+  .string()
+  .optional()
+  .describe(
+    'Optional: the path to the schema for this file, if you would rather name it here than in the # yaml-language-server line on top. Nothing on the site reads it.',
+  );
+
 /** Parse YYYY-MM-DD strictly, rejecting impossible days like 2026-02-30. */
 function parseIsoDate(value: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
@@ -83,11 +127,15 @@ export const dateSchema = z
  * timeline and, in the same shape, for each rollout phase's.
  */
 function timelineSchema() {
-  return z.strictObject(
+  return strict(
     Object.fromEntries(stageIds.map((id) => [id, dateSchema.optional()])) as Record<
       string,
       z.ZodOptional<typeof dateSchema>
     >,
+    // The keys here are stage names rather than fields, so a misspelling is
+    // told what it should have been, the same way an unknown `status:` is.
+    (keys) =>
+      `${quoted(keys)} ${keys.length === 1 ? 'is not a stage' : 'are not stages'} in this site's lifecycle. Must be one of: ${stageIds.join(', ')}.`,
   );
 }
 
@@ -106,7 +154,7 @@ export const phaseStageIds = siteConfig.lifecycle
 const PHASE_AUDIENCE_REQUIRED =
   'A phase needs an audience — say who gets it in this phase, for example "Pilot teams" or "Everyone".';
 
-const phaseSchema = z.object({
+const phaseSchema = strict({
   name: z
     .string({ error: 'A phase needs a name.' })
     .min(1, { error: 'A phase needs a name.' })
@@ -147,7 +195,7 @@ const channelSchema = z
     'A Slack channel to post into: #platform-news, or the channel ID from View channel details, C0123ABCD. A bare name without the # will not resolve.',
   );
 
-const linkSchema = z.object({
+const linkSchema = strict({
   label: z
     .string()
     .min(1, { error: 'A link needs a label.' })
@@ -157,7 +205,7 @@ const linkSchema = z.object({
     .describe('The full URL, starting with http:// or https://.'),
 });
 
-const ownerSchema = z.object({
+const ownerSchema = strict({
   name: z
     .string()
     .min(1, { error: 'An owner needs a name.' })
@@ -211,7 +259,8 @@ const ownerSchema = z.object({
     ),
 });
 
-export const teamSchema = z.object({
+export const teamSchema = strict({
+  $schema: schemaKey,
   name: z
     .string()
     .min(1, { error: 'A team needs a name.' })
@@ -248,7 +297,7 @@ export const teamSchema = z.object({
     .describe('Runbooks, dashboards, docs — anything a reader of the team page should have.'),
 });
 
-const updateSchema = z.object({
+const updateSchema = strict({
   date: dateSchema.describe(
     'The day you are posting this. Updates appear on the streamline page in this order.',
   ),
@@ -300,7 +349,8 @@ const updateSchema = z.object({
     ),
 });
 
-export const streamlineSchema = z.object({
+export const streamlineSchema = strict({
+  $schema: schemaKey,
   title: z
     .string()
     .min(1, { error: 'A streamline needs a title.' })

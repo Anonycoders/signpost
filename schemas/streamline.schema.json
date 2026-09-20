@@ -4,6 +4,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "$schema": {
+      "description": "Optional: the path to the schema for this file, if you would rather name it here than in the # yaml-language-server line on top. Nothing on the site reads it.",
+      "type": "string"
+    },
     "title": {
       "type": "string",
       "minLength": 1,
@@ -80,7 +84,8 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "additionalProperties": false
       },
       "description": "Who to ask about this. At least one, and name is the only required part."
     },
@@ -167,7 +172,8 @@
           "name",
           "audience",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "supersedes": {
@@ -204,7 +210,8 @@
         "required": [
           "label",
           "url"
-        ]
+        ],
+        "additionalProperties": false
       }
     },
     "body": {
@@ -267,7 +274,8 @@
           "date",
           "impact",
           "title"
-        ]
+        ],
+        "additionalProperties": false
       }
     }
   },
@@ -280,6 +288,7 @@
     "owners",
     "timeline"
   ],
+  "additionalProperties": false,
   "$defs": {
     "calendar-date": {
       "type": "string",

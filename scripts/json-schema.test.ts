@@ -82,6 +82,27 @@ describe('the configured vocabulary', () => {
     );
     expect(streamline.properties.timeline.additionalProperties).toBe(false);
   });
+
+  /**
+   * Every object, not just the ones somebody remembered. An open object here
+   * is an editor saying nothing about a field the validator will reject — the
+   * two ends of the same mistake, disagreeing.
+   */
+  it('closes every object, so an unknown field is flagged where it is typed', () => {
+    const open: string[] = [];
+
+    const walk = (node: unknown, path: string) => {
+      if (!node || typeof node !== 'object') return;
+      const value = node as Record<string, unknown>;
+
+      if (value.type === 'object' && value.additionalProperties !== false) open.push(path);
+      for (const [key, child] of Object.entries(value)) walk(child, `${path}.${key}`);
+    };
+
+    for (const [file, schema] of Object.entries(schemas)) walk(schema, file);
+
+    expect(open).toEqual([]);
+  });
 });
 
 describe('dates', () => {

@@ -4,6 +4,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "$schema": {
+      "description": "Optional: the path to the schema for this file, if you would rather name it here than in the # yaml-language-server line on top. Nothing on the site reads it.",
+      "type": "string"
+    },
     "name": {
       "type": "string",
       "minLength": 1,
@@ -44,12 +48,14 @@
         "required": [
           "label",
           "url"
-        ]
+        ],
+        "additionalProperties": false
       }
     }
   },
   "required": [
     "name",
     "mission"
-  ]
+  ],
+  "additionalProperties": false
 }

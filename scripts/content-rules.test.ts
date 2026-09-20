@@ -436,6 +436,69 @@ updates: []
   });
 });
 
+/**
+ * A key nobody recognises used to be dropped on the floor: the file parsed,
+ * CI passed, the site deployed, and whatever the author had written there
+ * simply never appeared. The schemas are closed so that the answer arrives
+ * while they are still looking at the file.
+ */
+describe('fields that do not exist', () => {
+  it('rejects a misspelled field instead of ignoring it in silence', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        extra: '\nsupercedes: devops/kubernetes-1-29',
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain('There is no "supercedes" field here.');
+  });
+
+  it('says which update a misspelled field is in', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: `
+  - date: 2026-09-10
+    impact: info
+    title: Rollout has started
+    effectiv: 2026-11-02`,
+      }),
+    });
+
+    const problem = result.errors.find((error) => error.message.includes('"effectiv"'));
+    expect(problem?.field).toBe('updates[0]');
+  });
+
+  it('tells a misspelled stage which stages this site has', () => {
+    // A timeline's keys are stage names, so the useful answer is the list —
+    // the same one an unknown `status:` gets.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        status: 'proposed',
+        timeline: `
+  proposed: 2026-01-15
+  rolling-ot: 2026-09-01`,
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      '"rolling-ot" is not a stage in this site\'s lifecycle.',
+    );
+    expect(messagesOf(result.errors)).toContain('rolling-out');
+  });
+
+  it('accepts $schema, which is an editor pointing at itself and not a typo', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': `$schema: ../../schemas/team.schema.json${DEVOPS_TEAM}`,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': `$schema: ../../../schemas/streamline.schema.json\n${streamline()}`,
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+});
+
 describe('updates that share one identity', () => {
   /**
    * An update is identified by its date and its title, because that is all a

@@ -369,6 +369,9 @@ error content/streamlines/devops/jenkins-pipelines.yaml
   lowercase-with-dashes
 - An unknown `status`, `category` or `impact` — the message lists the valid
   values
+- A field name that does not exist, like `supercedes` for `supersedes`, or a
+  misspelled stage inside a `timeline`. Nothing you write is skipped quietly: a
+  field Signpost does not know is one whose contents would never reach the page
 - A date that is not a real calendar date, or is written in any format other
   than `YYYY-MM-DD`
 - Timeline dates that contradict the lifecycle order — `generally-available`
@@ -428,7 +431,9 @@ anything that speaks
 [yaml-language-server](https://github.com/redhat-developer/yaml-language-server)
 — VS Code, Neovim, Helix, Zed, the JetBrains IDEs — it survives being copied
 into a new streamline, and you can see at a glance that a file is covered. If
-you write one from scratch, copy the line across.
+you write one from scratch, copy the line across. If you would rather name the
+schema in the body of the file, a `$schema:` key does the same job and is the
+one field the site itself ignores.
 
 **In VS Code**, install the
 [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
