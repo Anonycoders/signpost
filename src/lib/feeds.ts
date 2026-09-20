@@ -19,6 +19,7 @@ export interface FeedUpdate {
   effective?: Date;
   title: string;
   body?: string;
+  actions?: string[];
   impact: { label: string };
   streamline: {
     title: string;
@@ -49,13 +50,42 @@ function heading(update: FeedUpdate): string {
   return `<p><strong>${label}</strong>${when}</p>`;
 }
 
+/**
+ * The actions as one flat sentence, for a summary that carries no markup.
+ *
+ * Numbered rather than strung together with a separator. An action is a line an
+ * author punctuated as they saw fit, and "Redeploy.; Tell your team." reads
+ * like a mistake — a number belongs to the list rather than to the sentence.
+ */
+function actionSentence(actions: string[]): string {
+  const numbered = actions.map((action, index) => `(${index + 1}) ${action}`);
+
+  return `What you need to do: ${numbered.join(' ')}`;
+}
+
+/**
+ * The same list as markup, for the entry body a reader displays.
+ *
+ * Escaped as HTML here and again as XML by the feed writer, exactly as the
+ * heading above it is: the reader unwraps one layer when it parses the document
+ * and the other when it renders the markup.
+ */
+function actionList(actions: string[]): string {
+  const items = actions.map((action) => `<li>${escapeXml(action)}</li>`).join('');
+
+  return `<p><strong>What you need to do</strong></p><ul>${items}</ul>`;
+}
+
 function toEntry(update: FeedUpdate, site: URL): AtomEntry {
   const link = updateUrl(update, site);
   const body = update.body ? renderMarkdown(update.body) : '';
 
+  const actions = update.actions ?? [];
+
   const summaryParts = [
     update.effective ? `Takes effect ${formatDate(update.effective)}.` : null,
     update.body ? toPlainText(update.body) : null,
+    actions.length > 0 ? actionSentence(actions) : null,
   ].filter((part): part is string => part !== null);
 
   return {
@@ -68,7 +98,7 @@ function toEntry(update: FeedUpdate, site: URL): AtomEntry {
     updated: update.date,
     link,
     summary: summaryParts.length > 0 ? summaryParts.join(' ') : update.title,
-    content: `${heading(update)}${body}`,
+    content: `${heading(update)}${body}${actions.length > 0 ? actionList(actions) : ''}`,
     authors: update.streamline.owners.map((owner) => owner.name),
     categories: [
       update.streamline.team.name,

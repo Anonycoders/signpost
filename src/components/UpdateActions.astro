@@ -1,0 +1,29 @@
+---
+/**
+ * The things a reader has to do about an update, kept apart from the prose.
+ *
+ * A body explains what happened; an instruction buried in that paragraph is an
+ * instruction somebody skims past. Pulled out, it can be seen from across the
+ * page — and the same list reaches the feed and the chat announcement, so a
+ * reader meets it wherever they happen to be standing.
+ *
+ * Plain strings, never Markdown: a list of things to do is not the place for
+ * formatting, and both other consumers of this list are plain text.
+ */
+interface Props {
+  actions: string[];
+  /** Spacing belongs to the caller — the two callers sit in different rhythms. */
+  class?: string;
+}
+
+const { actions, class: className } = Astro.props;
+---
+
+<div
+  class:list={['rounded-card border border-border bg-surface-muted px-3 py-2.5', className]}
+>
+  <p class="text-xs font-semibold uppercase tracking-wide text-ink-muted">What you need to do</p>
+  <ul class="mt-1.5 list-disc space-y-1 pl-4 text-sm text-ink-secondary marker:text-ink-muted">
+    {actions.map((action) => <li>{action}</li>)}
+  </ul>
+</div>

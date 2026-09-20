@@ -436,6 +436,93 @@ describe('editing rather than adding', () => {
 
     expect(result.announcements[0]?.text).toContain('Breaking, was Info.');
   });
+
+  it('says nothing when only the actions are reworded', () => {
+    // Rewording an instruction is the most ordinary edit there is to an update
+    // that has already gone out, and a channel that repeats itself over one is
+    // a channel people stop reading. The link carries the current list.
+    const withActions = streamline({
+      updates: [
+        {
+          date: '2026-09-18',
+          impact: 'info',
+          title: 'Rollout has started',
+          actions: ['Pin your chart to 1.31.'],
+        },
+      ],
+    });
+
+    const result = collect({
+      ledger: seeded(withActions),
+      streamlines: [
+        {
+          id: 'devops/kubernetes-upgrade',
+          data: streamline({
+            updates: [
+              {
+                date: '2026-09-18',
+                impact: 'info',
+                title: 'Rollout has started',
+                actions: ['Pin your chart to 1.31.', 'Tell us which clusters you own.'],
+              },
+            ],
+          }),
+        },
+      ],
+    });
+
+    expect(result.announcements).toEqual([]);
+    expect(result.silent).toEqual([]);
+  });
+});
+
+describe('what the reader has to do', () => {
+  const ACTIONS = ['Pin your chart to 1.31.', 'Tell R&D <platform> which clusters you own.'];
+
+  const announced = (extra: Record<string, unknown>) =>
+    collect({
+      ledger: seeded(),
+      streamlines: [
+        {
+          id: 'devops/kubernetes-upgrade',
+          data: streamline({
+            updates: [
+              { date: '2026-09-18', impact: 'info', title: 'Rollout has started' },
+              {
+                date: '2026-09-19',
+                impact: 'breaking',
+                title: 'Ingress v1beta1 is removed',
+                ...extra,
+              },
+            ],
+          }),
+        },
+      ],
+    }).announcements[0]?.text ?? '';
+
+  it('arrives as its own lines under the body, escaped like everything else', () => {
+    const text = announced({ body: 'Move your manifests first.', actions: ACTIONS });
+
+    expect(text.split('\n').slice(-3)).toEqual([
+      'Move your manifests first.',
+      '• Pin your chart to 1.31.',
+      '• Tell R&amp;D &lt;platform&gt; which clusters you own.',
+    ]);
+  });
+
+  it('follows an announcement override rather than replacing it', () => {
+    const text = announced({
+      body: 'A long explanation written for someone already reading the page.',
+      announcement: 'Your manifests break on 2 November.',
+      actions: ['Pin your chart to 1.31.'],
+    });
+
+    expect(text.split('\n').slice(-2)).toEqual([
+      'Your manifests break on 2 November.',
+      '• Pin your chart to 1.31.',
+    ]);
+    expect(text).not.toContain('already reading the page');
+  });
 });
 
 describe('the guards', () => {

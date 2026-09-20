@@ -38,6 +38,29 @@ const STAGE_LABEL = new Map(siteConfig.lifecycle.map((stage) => [stage.id, stage
 const WINDING_DOWN_STAGES = siteConfig.lifecycle.filter((stage) => stage.windingDown === true);
 const TERMINAL_STAGES = siteConfig.lifecycle.filter((stage) => stage.terminal === true);
 
+/**
+ * The impact levels that mean "this one breaks things", read from config
+ * rather than from the id `breaking`, in the same spirit as the stages above:
+ * whichever levels a fork weights heaviest are the ones it takes most
+ * seriously, whatever they are called. With the shipped levels that is
+ * Breaking alone.
+ *
+ * Used for one warning: a change at that weight with nothing under `body` and
+ * nothing under `actions` tells a reader their work is about to break and then
+ * leaves them with nowhere to go.
+ */
+const HEAVIEST_IMPACTS = (() => {
+  const weights = siteConfig.impactLevels.map((impact) => impact.weight);
+  if (weights.length === 0) return new Map<string, string>();
+
+  const heaviest = Math.max(...weights);
+  return new Map(
+    siteConfig.impactLevels
+      .filter((impact) => impact.weight === heaviest)
+      .map((impact) => [impact.id, impact.label]),
+  );
+})();
+
 /** Updates dated outside this window are almost always a typo in the year. */
 const EARLIEST_SENSIBLE = new Date('2000-01-01T00:00:00Z');
 const FUTURE_LIMIT_YEARS = 3;
@@ -401,6 +424,20 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
           file: rel(file),
           field: `updates[${index}].date`,
           message: `${formatDate(update.date)} looks wrong — check the year.`,
+        });
+      }
+
+      // A title alone can say what is happening, but at this weight it cannot
+      // say what to do about it — and "Things will break if you do nothing" is
+      // precisely the update a reader arrives at needing the next step. One or
+      // the other is enough: `actions` if there is a list, a `body` if the
+      // answer is prose.
+      const heaviest = HEAVIEST_IMPACTS.get(update.impact);
+      if (heaviest && !update.body && !update.actions?.length) {
+        warnings.push({
+          file: rel(file),
+          field: `updates[${index}].actions`,
+          message: `"${update.title}" is marked ${heaviest}, but says nothing about what to do about it. Add actions, or a body explaining it.`,
         });
       }
 

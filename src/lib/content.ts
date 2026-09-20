@@ -48,6 +48,8 @@ export interface Update {
   stage: LifecycleStage;
   title: string;
   body?: string;
+  /** What the reader has to do, when there is something. */
+  actions?: string[];
   /** The streamline this update belongs to, for cross-streamline feeds. */
   streamline: Streamline;
 }
@@ -307,6 +309,7 @@ async function load() {
           : (stageOn(timeline, update.date) ?? timeline[0]?.stage ?? getStage(data.status)),
         title: update.title,
         body: update.body,
+        actions: update.actions,
         streamline,
       }));
 

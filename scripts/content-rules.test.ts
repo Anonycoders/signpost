@@ -649,6 +649,91 @@ describe('warnings', () => {
   });
 });
 
+describe('an update that says what to do', () => {
+  /** An `actions:` list, indented to sit under the update above it. */
+  const breaking = (actions = '') => `
+  - date: 2026-09-10
+    impact: breaking
+    title: Ingress v1beta1 is removed${actions}`;
+
+  it('accepts a list of things to do', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: breaking(`
+    actions:
+      - Pin your chart to 1.31.
+      - Tell us which clusters you own.`),
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('rejects an actions key with nothing under it', () => {
+    // An empty list is an author who meant to write something and did not; the
+    // field is optional, so leaving it out is always available.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: breaking('\n    actions: []'),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      'Either list something under actions or leave the field out.',
+    );
+  });
+
+  it('rejects an action long enough to be a paragraph', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: breaking(`\n    actions:\n      - ${'x'.repeat(201)}`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain('Keep an action under 200 characters');
+  });
+
+  it('warns when the heaviest impact says nothing about what to do', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: breaking(),
+      }),
+    });
+
+    const problem = result.warnings.find((warning) => warning.field === 'updates[0].actions');
+    expect(result.errors).toEqual([]);
+    expect(problem?.message).toContain('"Ingress v1beta1 is removed" is marked Breaking');
+    expect(problem?.message).toContain('Add actions, or a body explaining it.');
+  });
+
+  it('takes a body as an answer', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline({
+        updates: breaking('\n    body: Move your manifests to `networking.k8s.io/v1`.'),
+      }),
+    });
+
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('says nothing about a lesser impact with neither', () => {
+    // Most updates are Info, and "Rollout has started" is a complete thought.
+    // A warning on every one of those is a warning nobody reads.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.yaml': streamline(),
+    });
+
+    expect(result.warnings).toEqual([]);
+  });
+});
+
 describe('rollout phases', () => {
   /** A `phases:` block, indented to sit under the key. */
   const phases = (yaml: string) => `\nphases:${yaml}`;

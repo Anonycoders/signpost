@@ -5,6 +5,7 @@ import { formatDateShort, isoDate, relativeDays } from '@/lib/date';
 import { toneSurfaceClass } from '@/lib/tone';
 import Badge from './Badge.astro';
 import Markdown from './Markdown.astro';
+import UpdateActions from './UpdateActions.astro';
 
 /**
  * One entry in the changes feed: either an update a team wrote, or a streamline
@@ -102,6 +103,12 @@ const announced =
     {
       item.kind === 'update' && item.update.body && (
         <Markdown class="prose mt-2 text-sm" content={item.update.body} />
+      )
+    }
+
+    {
+      item.kind === 'update' && item.update.actions && item.update.actions.length > 0 && (
+        <UpdateActions actions={item.update.actions} class="mt-3" />
       )
     }
 

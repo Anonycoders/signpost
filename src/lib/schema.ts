@@ -331,6 +331,33 @@ const updateSchema = strict({
       'Markdown. What changes, when, and what the reader has to do — in the first two sentences. Written as a block scalar: body: |',
     ),
   /**
+   * What the reader has to do, separated from what happened.
+   *
+   * A body explains; these are the things somebody has to act on, and they are
+   * the part that gets lost in a paragraph. Kept apart, they can be shown as a
+   * list on the page, carried into the feed and repeated in the announcement —
+   * three places a reader might be standing when they need to know.
+   *
+   * No dates on them, deliberately. An update already has `date` and
+   * `effective`, and a per-action deadline would be a second calendar nobody is
+   * watching — one that the timeline, the changes page and the announcer all
+   * know nothing about.
+   */
+  actions: z
+    .array(
+      z
+        .string()
+        .min(1, { error: 'An action needs something to say, or leave it out.' })
+        .max(200, {
+          error: 'Keep an action under 200 characters — one thing to do, with the why in the body.',
+        }),
+    )
+    .min(1, { error: 'Either list something under actions or leave the field out.' })
+    .optional()
+    .describe(
+      'What a reader has to do about this, one thing per line. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.',
+    ),
+  /**
    * What to say about this in a chat announcement, when the body would not
    * survive the trip — it is too long, or it leans on formatting a chat message
    * cannot carry, or it is written for someone already on the page.

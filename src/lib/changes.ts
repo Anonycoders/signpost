@@ -31,6 +31,8 @@ export interface ChangeUpdate {
   effective?: Date;
   title: string;
   body?: string;
+  /** What the reader has to do, when there is something. */
+  actions?: string[];
   impact: ImpactLevel;
   stage: LifecycleStage;
 }

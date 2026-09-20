@@ -5,6 +5,7 @@ import { formatDate, isoDate, relativeDays } from '@/lib/date';
 import { toneSolidVar } from '@/lib/tone';
 import Badge from './Badge.astro';
 import Markdown from './Markdown.astro';
+import UpdateActions from './UpdateActions.astro';
 
 interface Props {
   update: Update;
@@ -67,4 +68,8 @@ const id = anchor ? updateAnchor(update) : undefined;
   </h3>
 
   {update.body && <Markdown class="prose mt-2 text-sm" content={update.body} />}
+
+  {update.actions && update.actions.length > 0 && (
+    <UpdateActions actions={update.actions} class="mt-3" />
+  )}
 </article>

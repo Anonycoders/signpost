@@ -263,6 +263,16 @@
             "description": "Markdown. What changes, when, and what the reader has to do — in the first two sentences. Written as a block scalar: body: |",
             "type": "string"
           },
+          "actions": {
+            "description": "What a reader has to do about this, one thing per line. Shown as a list on the page, in the feed and in the announcement. Leave it out when there is nothing to do.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
           "announcement": {
             "description": "What to say about this in a chat announcement, when the body would not survive the trip. Without it the announcement carries the body, shortened. The title and a link are added either way. Plain sentences, not chat markup.",
             "type": "string",

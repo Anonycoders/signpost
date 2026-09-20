@@ -39,6 +39,9 @@ updates:
 
       Run `kubectl deprecations --context <your-cluster>` to see whether you are
       affected. The migration guide has the before-and-after manifests.
+    actions: # optional: the things somebody has to actually do
+      - Run kubectl deprecations against every cluster you own.
+      - Move any v1beta1 Ingress objects to networking.k8s.io/v1.
 ```
 
 Updates are append-at-the-top and never edited away: the history is the point.
@@ -86,6 +89,35 @@ guide. Assume the reader has never heard of your project.
 
 The body is Markdown: bold, links, lists, inline code and fenced blocks all
 work.
+
+### Say what the reader has to do
+
+`actions` is the list of things somebody has to go and do. It is separate from
+the body because an instruction inside a paragraph is an instruction people skim
+past — and because this list is the part that travels.
+
+```yaml
+actions:
+  - Run kubectl deprecations against every cluster you own.
+  - Move any v1beta1 Ingress objects to networking.k8s.io/v1 before 1 October.
+```
+
+It shows on the page under **What you need to do**, in the feed, and in the chat
+announcement if your instance sends those — three places a reader might be
+standing when they need it, from one list you wrote once.
+
+One instruction per line, under 200 characters, in plain sentences: these are
+not Markdown, and the feed and chat both carry them as text. Put the reasoning
+in the body and keep these to the doing.
+
+No dates on them. An update already has `date` and `effective`; a deadline
+attached to one line of a list is a second calendar that nothing else on the
+site knows about. If two things are due on different days, they are two updates.
+
+Leave the field out when there is genuinely nothing to do — most `info` updates
+have nothing. A `breaking` update with neither actions nor a body gets a warning
+from the validator, because that combination tells a reader their work is about
+to break and then stops talking.
 
 ---
 
@@ -200,6 +232,21 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `announce` | no | `false` keeps this one out of the announcements |
 | `body` | no | The long explanation, Markdown, as a block scalar |
 | `updates` | no | Newest first |
+
+### Update fields
+
+Each entry under `updates:`, newest first.
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `date` | yes | The day you posted it |
+| `impact` | yes | `breaking`, `action-required` or `info` |
+| `title` | yes | Up to 120 characters. The sentence the feed and the chat message lead with |
+| `effective` | no | The day it lands on other people, when that is later |
+| `status` | no | The stage this happened in; worked out from the timeline otherwise |
+| `body` | no | The explanation, Markdown, as a block scalar |
+| `actions` | no | What the reader has to do, one per line, plain text — see above |
+| `announcement` | no | What to say in chat instead of the body — see below |
 
 ### Reaching an owner on Slack
 
@@ -404,6 +451,9 @@ error content/streamlines/devops/jenkins-pipelines.yaml
 - A streamline whose changes would be announced but which resolves to no
   channel. The job would work out what changed and then drop it, which looks
   from the outside exactly like a streamline that never changed.
+- A `breaking` update with neither `actions` nor a `body`. The badge tells a
+  reader their work is about to break, and then the update has nothing to say
+  about what to do instead.
 
 Nothing in the validator cares about prose. It cannot tell you that your update
 is vague, so that part is on you and your reviewer.

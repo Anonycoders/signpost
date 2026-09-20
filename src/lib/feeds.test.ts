@@ -68,3 +68,45 @@ describe('a summary with characters HTML and XML both care about', () => {
     expect(summary?.textContent).toBe(READS);
   });
 });
+
+describe('the actions on an update', () => {
+  const ACTIONS = ['Pin your chart to 1.31.', 'Tell R&D which clusters you own.'];
+
+  it('are in the summary, numbered, after the body', () => {
+    const [entry] = toEntries([update({ body: 'Ingress moves.', actions: ACTIONS })], SITE);
+
+    expect(entry?.summary).toBe(
+      'Ingress moves. What you need to do: (1) Pin your chart to 1.31. ' +
+        '(2) Tell R&D which clusters you own.',
+    );
+  });
+
+  it('are the summary on their own when there is no body', () => {
+    const [entry] = toEntries([update({ actions: ACTIONS })], SITE);
+
+    expect(entry?.summary).toBe(
+      'What you need to do: (1) Pin your chart to 1.31. (2) Tell R&D which clusters you own.',
+    );
+  });
+
+  it('are a list in the entry body, and read as written once parsed', () => {
+    const xml = feed([update({ body: 'Ingress moves.', actions: ACTIONS })]);
+
+    const parsed = new DOMParser().parseFromString(xml, 'application/xml');
+    const content = parsed.getElementsByTagName('content')[0];
+    const html = new DOMParser().parseFromString(
+      `<div>${content?.textContent ?? ''}</div>`,
+      'text/html',
+    );
+    const items = Array.from(html.getElementsByTagName('li')).map((li) => li.textContent);
+
+    expect(items).toEqual(ACTIONS);
+  });
+
+  it('leave the entry alone when there are none', () => {
+    const [entry] = toEntries([update({ body: 'Ingress moves.' })], SITE);
+
+    expect(entry?.summary).toBe('Ingress moves.');
+    expect(entry?.content).not.toContain('What you need to do');
+  });
+});

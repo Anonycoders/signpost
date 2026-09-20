@@ -407,6 +407,25 @@ function bodyFor(subject: Subject): string | undefined {
   return undefined;
 }
 
+/**
+ * What the reader has to do, as its own lines under the prose.
+ *
+ * Bulleted rather than numbered, unlike the feed's one-line summary: a chat
+ * message has real newlines, and `•` is what mrkdwn leaves alone — it has no
+ * list syntax of its own to reach for.
+ *
+ * These are not in the fingerprint, deliberately. Rewording an instruction is
+ * the most ordinary edit an author makes to an update that has already been
+ * announced, and re-announcing it would teach people that the channel repeats
+ * itself. The date and the impact are what make it news; this is detail
+ * carried alongside, and the link is there for whoever wants the current list.
+ */
+function actionsFor(subject: Subject): string[] {
+  if (subject.kind !== 'update') return [];
+
+  return (subject.update.actions ?? []).map((action) => `• ${escapeText(action)}`);
+}
+
 function messageFor(
   subject: Subject,
   previous: string | undefined,
@@ -425,6 +444,8 @@ function messageFor(
 
   const body = bodyFor(subject);
   if (body) lines.push(body);
+
+  lines.push(...actionsFor(subject));
 
   return lines.join('\n');
 }
