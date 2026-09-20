@@ -312,11 +312,17 @@ error content/streamlines/devops/jenkins-pipelines.md
 - A date so far off it is almost certainly a typo in the year
 - A `supersedes` pointing at a streamline that does not exist
 - A summary or title over its length limit
+- Two updates posted on the same day under the same title, or under titles alike
+  enough to collide once shortened — either way they would share one link on the
+  page and one entry in the feed, and the second would effectively vanish
+- Two phase names that differ only in their punctuation
 
 **It will warn, but let you merge:**
 
 - An active streamline with no update for six months. Either post something or
   move the status on — a roadmap nobody maintains is worse than no roadmap.
+- A `status` its own timeline has already moved past. The badge says one stage
+  and the dates say a later one, and a reader has no way to know which is right.
 - A `slackId` with no `slack` handle beside it, or with no workspace configured
   for the site — either way the ID does nothing, and silently.
 

@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 import { load as loadYaml } from 'js-yaml';
 
 import { siteConfig } from '../site.config';
+import { slugify, updateAnchor } from '../src/lib/anchor';
 import { phaseStageIds, streamlineSchema, teamSchema } from '../src/lib/schema';
 
 /**
@@ -287,6 +288,27 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
       });
     }
 
+    // A streamline claiming a stage its own dates have already moved past.
+    // A warning for the same reason the phase version below is: the dates may
+    // be the plan and the status the truth of this morning, and failing a
+    // build over that teaches people to leave the dates out. But `status` is
+    // what the badge says on every card, on the roadmap and in the feed, while
+    // the stepper on the streamline's own page is drawn from the timeline — so
+    // one left behind puts the page in two minds about where the thing is.
+    const overtakenBy = datedStages.find(
+      (entry) =>
+        entry.date.getTime() <= Date.now() &&
+        STAGE_ORDER.indexOf(entry.stage) > STAGE_ORDER.indexOf(data.status),
+    );
+
+    if (overtakenBy) {
+      warnings.push({
+        file: rel(file),
+        field: 'status',
+        message: `This is marked ${STAGE_LABEL.get(data.status)}, but the timeline says it reached ${STAGE_LABEL.get(overtakenBy.stage)} on ${formatDate(overtakenBy.date)}. Move the status on, or correct the date.`,
+      });
+    }
+
     const windingDown = WINDING_DOWN_STAGES.find((stage) => stage.id === data.status);
     const endStage = TERMINAL_STAGES[0];
 
@@ -312,6 +334,7 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
     // actually run. Each phase is only checked against itself.
 
     const seenPhaseNames = new Map<string, number>();
+    const seenPhaseSlugs = new Map<string, number>();
 
     data.phases.forEach((phase, index) => {
       const key = phase.name.trim().toLowerCase();
@@ -325,6 +348,26 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
         });
       } else {
         seenPhaseNames.set(key, index);
+
+        // The same rule, one step further in. A phase has no id either, so
+        // anything that refers to one from outside the page reduces its name
+        // the way update anchors are reduced: lowercased, punctuation and
+        // accents dropped. "Phase 1 — pilot" and "Phase 1 / pilot" are two
+        // names to a reader and one name to everything else, and the second of
+        // the two is the one that quietly stops existing.
+        const slug = slugify(phase.name);
+        const sameSlugAt = seenPhaseSlugs.get(slug);
+
+        if (sameSlugAt === undefined) {
+          seenPhaseSlugs.set(slug, index);
+        } else {
+          const reduced = slug ? ` ("${slug}")` : '';
+          errors.push({
+            file: rel(file),
+            field: `phases[${index}].name`,
+            message: `"${phase.name}" and "${data.phases[sameSlugAt]!.name}" are different names that reduce to the same one${reduced} once punctuation is dropped. Phase names have to differ in their words, not only in their punctuation.`,
+          });
+        }
       }
 
       const phaseTimeline = (phase.timeline ?? {}) as Record<string, Date | undefined>;
@@ -436,7 +479,31 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
     const futureLimit = new Date();
     futureLimit.setUTCFullYear(futureLimit.getUTCFullYear() + FUTURE_LIMIT_YEARS);
 
+    // An update has no author-supplied id, so it is identified by its date and
+    // its title — that is what `updateAnchor` builds the fragment from, and
+    // what `feeds.ts` turns into the `id` of the update's Atom entry. Two
+    // updates that reduce to the same anchor therefore share one link on the
+    // page and one identity in the feed, where a duplicate id leaves readers'
+    // feed clients free to show one of the two and drop the other.
+    //
+    // Not only an exact repeat: the slug is cut at 48 characters, so two long
+    // titles posted on the same day collide on their opening words alone.
+    const seenAnchors = new Map<string, number>();
+
     data.updates.forEach((update, index) => {
+      const anchor = updateAnchor(update);
+      const sameAnchorAt = seenAnchors.get(anchor);
+
+      if (sameAnchorAt === undefined) {
+        seenAnchors.set(anchor, index);
+      } else {
+        errors.push({
+          file: rel(file),
+          field: `updates[${index}].title`,
+          message: `This and updates[${sameAnchorAt}] are both dated ${formatDate(update.date)} and both come out as "#${anchor}", so they would share a single link on the page and a single entry in the feed. Give one of them a different title.`,
+        });
+      }
+
       if (update.date < EARLIEST_SENSIBLE || update.date > futureLimit) {
         errors.push({
           file: rel(file),

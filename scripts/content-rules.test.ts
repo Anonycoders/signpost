@@ -440,7 +440,110 @@ updates: []
   });
 });
 
+describe('updates that share one identity', () => {
+  /**
+   * An update is identified by its date and its title, because that is all a
+   * content file gives it. Two that reduce to the same anchor share a link on
+   * the page and an entry id in the feed, and the second one effectively does
+   * not exist — which is why this is an error and not a warning.
+   */
+
+  it('rejects two updates posted on the same day under the same title', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    impact: info
+    title: Rollout has started
+  - date: 2026-09-10
+    impact: breaking
+    title: Rollout has started`,
+      }),
+    });
+
+    const problem = result.errors.find((error) => error.field === 'updates[1].title');
+    expect(problem?.message).toContain('updates[0]');
+    expect(problem?.message).toContain('#update-2026-09-10-rollout-has-started');
+    expect(problem?.message).toContain('a different title');
+  });
+
+  it('rejects two long titles that collide only once the slug is cut short', () => {
+    // Neither title repeats the other, and nothing on the page looks wrong.
+    // The slug stops at 48 characters, so both land on the same anchor.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    impact: breaking
+    title: Ingress v1beta1 is removed from every production cluster
+  - date: 2026-09-10
+    impact: breaking
+    title: Ingress v1beta1 is removed from every production namespace`,
+      }),
+    });
+
+    const problem = result.errors.find((error) => error.field === 'updates[1].title');
+    expect(problem?.message).toContain('#update-2026-09-10-ingress-v1beta1-is-removed-from-every');
+  });
+
+  it('accepts the same title posted on two different days', () => {
+    // A recurring title is normal — "Wave 2 begins" happens more than once —
+    // and the date is part of the anchor, so the two do not collide.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        updates: `
+  - date: 2026-09-10
+    impact: info
+    title: Another wave begins
+  - date: 2026-09-17
+    impact: info
+    title: Another wave begins`,
+      }),
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+});
+
 describe('warnings', () => {
+  it('flags a status its own timeline has already moved past', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        status: 'rolling-out',
+        timeline: `
+  proposed: 2026-01-15
+  rolling-out: 2026-03-02
+  generally-available: 2026-06-01`,
+      }),
+    });
+
+    const problem = result.warnings.find((warning) => warning.field === 'status');
+    expect(result.errors).toEqual([]);
+    expect(problem?.message).toContain('marked Rolling out');
+    expect(problem?.message).toContain('reached Generally available on 2026-06-01');
+  });
+
+  it('leaves a status alone when the stage ahead of it is still a plan', () => {
+    // The whole point of the timeline is that it holds dates that have not
+    // happened. A status only lags once one of them has.
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        status: 'rolling-out',
+        timeline: `
+  proposed: 2026-01-15
+  rolling-out: 2026-03-02
+  generally-available: 2099-01-01`,
+      }),
+    });
+
+    expect(result.warnings).toEqual([]);
+  });
+
   it('flags an active streamline that has gone quiet, without failing the build', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
@@ -570,6 +673,26 @@ describe('rollout phases', () => {
 
     expect(messagesOf(result.errors)).toContain(
       'Two phases are both called "phase 1". Phase names have to be unique within a streamline so a reader can tell which wave they are in.',
+    );
+    expect(result.errors[0]?.field).toBe('phases[1].name');
+  });
+
+  it('rejects two phase names that differ only in their punctuation', () => {
+    const result = fixture({
+      'content/teams/devops.yaml': DEVOPS_TEAM,
+      'content/streamlines/devops/kubernetes-upgrade.md': streamline({
+        extra: phases(`
+  - name: Phase 1 — pilot
+    audience: Pilot teams
+    status: proposed
+  - name: Phase 1 / pilot
+    audience: Everyone else
+    status: proposed`),
+      }),
+    });
+
+    expect(messagesOf(result.errors)).toContain(
+      '"Phase 1 / pilot" and "Phase 1 — pilot" are different names that reduce to the same one ("phase-1-pilot") once punctuation is dropped.',
     );
     expect(result.errors[0]?.field).toBe('phases[1].name');
   });
