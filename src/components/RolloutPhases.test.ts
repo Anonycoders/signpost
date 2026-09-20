@@ -75,6 +75,16 @@ describe('RolloutPhases', () => {
     expect(html).toContain('Currently reaching Product engineering.');
   });
 
+  it('does not claim to be reaching anyone before the rollout has started', async () => {
+    const html = await render([
+      phase('Phase 1', 'Platform engineers', 'proposed'),
+      phase('Phase 2', 'Everyone else', 'proposed'),
+    ]);
+
+    expect(html).toContain('Next up: Platform engineers.');
+    expect(html).not.toContain('Currently reaching');
+  });
+
   it('says so when every phase has landed, rather than pointing at nothing', async () => {
     const html = await render([
       phase('Phase 1', 'Pilot teams', 'generally-available'),

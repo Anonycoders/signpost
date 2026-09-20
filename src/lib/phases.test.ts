@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { LifecycleStage } from '@config';
-import { finalPhaseStageId, phaseEmphasis, type Phase } from './phases';
+import {
+  finalPhaseStageId,
+  firstPhaseStageId,
+  phaseEmphasis,
+  phaseSummary,
+  type Phase,
+} from './phases';
 
 /**
  * Which row of the rollout tracker carries the weight. The rule is only worth
@@ -24,6 +30,51 @@ describe('finalPhaseStageId', () => {
     // generally-available, with deprecated and retired excluded as
     // winding-down and terminal.
     expect(finalPhaseStageId).toBe('generally-available');
+  });
+});
+
+describe('firstPhaseStageId', () => {
+  it('is the stage a phase sits in before anything has happened', () => {
+    expect(firstPhaseStageId).toBe('proposed');
+  });
+});
+
+describe('phaseSummary', () => {
+  it('says nothing is recorded when there are no phases', () => {
+    expect(phaseSummary([])).toBe('No phases recorded.');
+  });
+
+  it('names the audience being reached once a wave is actually in motion', () => {
+    expect(
+      phaseSummary([phase('Phase 1', 'generally-available'), phase('Phase 2', 'rolling-out')]),
+    ).toBe('Currently reaching Phase 2 audience.');
+  });
+
+  it('does not claim to be reaching anyone when the rollout has not started', () => {
+    // The whole point of the rule: every phase still proposed means nobody has
+    // it yet, and "currently reaching" would be a plain falsehood.
+    expect(phaseSummary([phase('Phase 1', 'proposed'), phase('Phase 2', 'proposed')])).toBe(
+      'Next up: Phase 1 audience.',
+    );
+  });
+
+  it('looks ahead when the waves that landed are done and the next has not begun', () => {
+    expect(
+      phaseSummary([phase('Phase 1', 'generally-available'), phase('Phase 2', 'proposed')]),
+    ).toBe('Next up: Phase 2 audience.');
+  });
+
+  it('says so when every phase has landed', () => {
+    expect(
+      phaseSummary([
+        phase('Phase 1', 'generally-available'),
+        phase('Phase 2', 'generally-available'),
+      ]),
+    ).toBe('All 2 phases have landed.');
+  });
+
+  it('does not count its way into bad grammar for a single landed phase', () => {
+    expect(phaseSummary([phase('Phase 1', 'generally-available')])).toBe('Every phase has landed.');
   });
 });
 

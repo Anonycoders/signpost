@@ -39,6 +39,12 @@ export type PhaseEmphasis = 'complete' | 'active' | 'upcoming';
 export const finalPhaseStageId: string | undefined = phaseStageIds[phaseStageIds.length - 1];
 
 /**
+ * The stage a phase sits in before anything has happened for that audience.
+ * Derived like the one above, so a renamed first stage follows.
+ */
+export const firstPhaseStageId: string | undefined = phaseStageIds[0];
+
+/**
  * Which row carries the weight, one entry per phase in the order given.
  *
  * The active phase is the furthest along that has not finished: the pilot
@@ -72,4 +78,32 @@ export function phaseEmphasis(phases: Phase[]): PhaseEmphasis[] {
     if (isComplete[index]) return 'complete';
     return index === activeIndex ? 'active' : 'upcoming';
   });
+}
+
+/**
+ * The one line above the tracker, for a reader who is not going to read the
+ * table.
+ *
+ * It has to survive a rollout that has not begun. A streamline can declare its
+ * waves while the whole thing is still a proposal, and saying "currently
+ * reaching" about an audience nobody has shipped to yet is simply false — so a
+ * phase still sitting in the first stage is announced as what comes next
+ * instead of as what is happening.
+ */
+export function phaseSummary(phases: Phase[]): string {
+  const emphasis = phaseEmphasis(phases);
+  const activeIndex = emphasis.indexOf('active');
+
+  if (activeIndex === -1) {
+    const landed = emphasis.filter((weight) => weight === 'complete').length;
+    if (landed === 0) return 'No phases recorded.';
+    // "All 1 phase have landed" is what counting into a sentence gets you.
+    return landed === 1 ? 'Every phase has landed.' : `All ${landed} phases have landed.`;
+  }
+
+  const { audience, stage } = phases[activeIndex]!;
+
+  return stage.id === firstPhaseStageId
+    ? `Next up: ${audience}.`
+    : `Currently reaching ${audience}.`;
 }

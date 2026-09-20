@@ -1,7 +1,7 @@
 ---
 import Badge from '@/components/Badge.astro';
 import { formatDateShort } from '@/lib/date';
-import { phaseEmphasis, type Phase } from '@/lib/phases';
+import { phaseEmphasis, phaseSummary, type Phase } from '@/lib/phases';
 
 /**
  * The audience-by-audience rollout, as a tracker a reader can find themselves
@@ -25,21 +25,14 @@ const { phases } = Astro.props;
 const emphasis = phaseEmphasis(phases);
 const rows = phases.map((phase, index) => ({ phase, emphasis: emphasis[index]! }));
 
-const active = rows.find((row) => row.emphasis === 'active');
-const landed = rows.filter((row) => row.emphasis === 'complete').length;
+const summary = phaseSummary(phases);
 ---
 
 <section aria-labelledby="phases-heading">
   <h2 id="phases-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
     Rollout phases
   </h2>
-  <p class="mt-1.5 text-sm text-ink-secondary">
-    {
-      active
-        ? `Currently reaching ${active.phase.audience}.`
-        : `All ${landed} phase${landed === 1 ? '' : 's'} have landed.`
-    }
-  </p>
+  <p class="mt-1.5 text-sm text-ink-secondary">{summary}</p>
 
   <div class="mt-5 overflow-hidden rounded-card border border-border bg-surface">
     <ul class="divide-y divide-border">
