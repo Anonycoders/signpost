@@ -260,8 +260,11 @@ remember that a change there has to satisfy `npm run validate` as well as
 Both layers tell a contributor what is wrong after they have written it.
 [`scripts/json-schema.ts`](../scripts/json-schema.ts) converts the layer-1 Zod
 schemas to JSON Schema in `schemas/`, which is what tells them while they are
-typing. `npm run schema` regenerates it; `.vscode/settings.json` attaches it to
-`content/`, and CONTRIBUTING has the modeline for everything else.
+typing. `npm run schema` regenerates it. A content file reaches its schema
+through the `# yaml-language-server: $schema=…` comment on its own first line,
+which works in any editor running that language server;
+`.vscode/settings.json` maps the same schemas by path as a backstop for a file
+written without it.
 
 Three things about it are deliberate, and each one is load-bearing:
 

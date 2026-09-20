@@ -270,7 +270,7 @@ The repository ships three workflows:
 
 | Workflow | Runs on | Does |
 | --- | --- | --- |
-| [`ci.yml`](../.github/workflows/ci.yml) | every pull request | validate → type-check → test → build |
+| [`ci.yml`](../.github/workflows/ci.yml) | every pull request | validate → schema → type-check → test → build |
 | [`deploy.yml`](../.github/workflows/deploy.yml) | push to `main`, nightly, manual | build → upload → deploy to Pages |
 | [`announce.yml`](../.github/workflows/announce.yml) | a schedule, manual | post what changed to Slack — inert unless configured |
 

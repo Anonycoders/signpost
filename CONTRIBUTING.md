@@ -99,6 +99,7 @@ is not there, create it — the filename is the team slug, in
 lowercase-with-dashes:
 
 ```yaml
+# yaml-language-server: $schema=../../schemas/team.schema.json
 # content/teams/devops.yaml
 name: DevOps
 mission: Runs the paved road — clusters, CI runners, deployment tooling and the
@@ -115,6 +116,7 @@ your team's slug — that is what wires up ownership and review. Copy this whole
 block and edit it:
 
 ```yaml
+# yaml-language-server: $schema=../../../schemas/streamline.schema.json
 title: Kubernetes 1.31 upgrade
 team: devops # must match the directory this file is in
 category: infrastructure
@@ -160,6 +162,14 @@ updates:
     impact: info
     title: All staging clusters are running 1.31
 ```
+
+**Keep the first line.** It is a comment as far as YAML is concerned, and it is
+what points your editor at the schema for this file — the field names, your
+organization's own stage names, the date format, all offered as you type. The
+number of `../` is how far the file sits from the repository root, so a
+streamline in `content/streamlines/<team>/` needs three and a team file in
+`content/teams/` needs two. Nothing breaks without it; you just lose the help.
+[More on setting that up](#let-your-editor-fill-it-in-for-you).
 
 **3. Open a pull request** with that one file. Your team owns the directory, so
 your own team can review and merge it. CI validates the content before anyone
@@ -395,33 +405,37 @@ is vague, so that part is on you and your reviewer.
 
 ## Let your editor fill it in for you
 
-Worth the two minutes if you write content more than once. Open the repository
-in VS Code and accept the extension recommendation it offers you — that is the
-[YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml),
-and once it is installed a streamline file starts completing itself. `Ctrl-Space`
-lists the fields that exist. A stage name you half-remember gets offered in
-full. A date in the wrong format is underlined while you type it, not three
-minutes later in CI.
+Worth the two minutes if you write content more than once. `Ctrl-Space` lists
+the fields that exist. A stage name you half-remember gets offered in full. A
+date in the wrong format is underlined while you type it, rather than three
+minutes later in CI. And the lists you are offered are **this** repository's,
+not the ones Signpost ships with — they are generated from `site.config.ts` into
+`schemas/`, so a stage your organization renamed is the stage you get.
 
-The lists it offers are **this** repository's, not the ones Signpost ships with.
-They are generated from `site.config.ts` into `schemas/`, so if your
-organization renamed a stage or added a category, that is what you are offered.
-
-If you use something other than VS Code, anything that speaks
-[yaml-language-server](https://github.com/redhat-developer/yaml-language-server)
-— Neovim, Helix, Zed, the JetBrains IDEs — gets the same thing from a comment on
-the first line of the file:
+Every content file says which schema describes it, on its first line:
 
 ```yaml
 # yaml-language-server: $schema=../../../schemas/streamline.schema.json
 ```
 
-Three levels up from `content/streamlines/<team>/`, two from a team file in
-`content/teams/`:
-
 ```yaml
 # yaml-language-server: $schema=../../schemas/team.schema.json
 ```
+
+That line is a plain YAML comment, so it changes nothing about the site. It is
+in the file rather than in an editor setting for three reasons: it works in
+anything that speaks
+[yaml-language-server](https://github.com/redhat-developer/yaml-language-server)
+— VS Code, Neovim, Helix, Zed, the JetBrains IDEs — it survives being copied
+into a new streamline, and you can see at a glance that a file is covered. If
+you write one from scratch, copy the line across.
+
+**In VS Code**, install the
+[YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+when the editor offers it; the recommendation is in `.vscode/extensions.json`.
+Without it the line above is only a comment and nothing happens.
+`.vscode/settings.json` additionally maps the schemas onto `content/` by path,
+which covers a file that has lost its first line.
 
 None of this replaces `npm run validate`. The schema knows the shape and the
 vocabulary — which fields exist, which values are allowed, what a date looks
