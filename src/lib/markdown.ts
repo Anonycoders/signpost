@@ -64,7 +64,7 @@ function isPrintable(code: number): boolean {
   // A lone surrogate is half a character and renders as a replacement box.
   if (code >= 0xd800 && code <= 0xdfff) return false;
   if (code === 0x7f) return false;
-  // The three that survive are whitespace, and collapse to a space below.
+  // The three that survive are whitespace, and become a single space below.
   return code >= 0x20 || code === 0x09 || code === 0x0a || code === 0x0d;
 }
 
