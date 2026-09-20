@@ -1,12 +1,9 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-
-import matter from 'gray-matter';
-import { load as loadYaml } from 'js-yaml';
-
 import { siteConfig } from '../site.config';
 import { slugify, updateAnchor } from '../src/lib/anchor';
-import { phaseStageIds, streamlineSchema, teamSchema } from '../src/lib/schema';
+import { phaseStageIds } from '../src/lib/schema';
+import type { StreamlineData } from '../src/lib/schema';
+import { loadStreamlines, loadTeams, repoRelative } from './load-content';
+import type { Problem } from './load-content';
 
 /**
  * Content rules that a schema cannot express.
@@ -15,17 +12,13 @@ import { phaseStageIds, streamlineSchema, teamSchema } from '../src/lib/schema';
  * team exist, does that superseded streamline exist, do these dates tell a
  * story that could actually have happened.
  *
+ * Reading the files is load-content.ts's job; nothing here touches the disk.
  * Kept separate from the CLI entry point so the test suite can run the same
  * rules against fixtures.
  */
 
-export interface Problem {
-  /** Repository-relative path, so the message can be pasted into an editor. */
-  file: string;
-  /** Frontmatter field the problem belongs to, if it maps to one. */
-  field?: string;
-  message: string;
-}
+/** Re-exported: a problem is reported from here whoever first noticed it. */
+export type { Problem };
 
 export interface ValidationResult {
   errors: Problem[];
@@ -52,34 +45,15 @@ const FUTURE_LIMIT_YEARS = 3;
 /** An active streamline silent for this long is probably out of date. */
 const STALE_AFTER_DAYS = 180;
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function listFiles(dir: string, extensions: string[]): string[] {
-  if (!existsSync(dir)) return [];
-
-  return readdirSync(dir, { recursive: true, encoding: 'utf8' })
-    .filter((entry) => extensions.some((ext) => entry.endsWith(ext)))
-    .map((entry) => join(dir, entry))
-    .sort();
-}
-
 function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
-}
-
-/** Turn a Zod issue path into a readable field name: `updates[0].impact`. */
-function fieldPath(path: readonly PropertyKey[]): string {
-  return path.reduce<string>((acc, segment) => {
-    if (typeof segment === 'number') return `${acc}[${segment}]`;
-    return acc ? `${acc}.${String(segment)}` : String(segment);
-  }, '');
 }
 
 export function validateContent(contentDir: string, repoRoot: string): ValidationResult {
   const errors: Problem[] = [];
   const warnings: Problem[] = [];
 
-  const rel = (absolute: string) => relative(repoRoot, absolute).split(sep).join('/');
+  const rel = (absolute: string) => repoRelative(absolute, repoRoot);
 
   // ---------- Configuration ----------
   // Checked here rather than left to fail silently: a winding-down stage with
@@ -96,113 +70,38 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
 
   // ---------- Teams ----------
 
-  const teamsDir = join(contentDir, 'teams');
-  const teamFiles = listFiles(teamsDir, ['.yaml', '.yml']);
+  const teams = loadTeams(contentDir, repoRoot);
   const teamSlugs = new Set<string>();
 
-  for (const file of teamFiles) {
-    const slug = file
-      .slice(teamsDir.length + 1)
-      .replace(/\.(yaml|yml)$/, '')
-      .split(sep)
-      .join('/');
-
-    if (!SLUG_PATTERN.test(slug)) {
-      errors.push({
-        file: rel(file),
-        message: `"${slug}" is not a usable team slug. Name the file in lowercase-with-dashes, for example developer-experience.yaml.`,
-      });
-      continue;
-    }
-
-    let raw: unknown;
-    try {
-      raw = loadYaml(readFileSync(file, 'utf8'));
-    } catch (error) {
-      errors.push({
-        file: rel(file),
-        message: `This file is not valid YAML. ${(error as Error).message}`,
-      });
-      continue;
-    }
-
-    const parsed = teamSchema.safeParse(raw);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        errors.push({
-          file: rel(file),
-          field: fieldPath(issue.path) || undefined,
-          message: issue.message,
-        });
-      }
-      continue;
-    }
-
-    teamSlugs.add(slug);
+  for (const team of teams.entries) {
+    errors.push(...team.problems);
+    if (team.data) teamSlugs.add(team.slug);
   }
 
-  if (teamFiles.length === 0) {
+  if (teams.entries.length === 0) {
     warnings.push({
-      file: rel(teamsDir),
+      file: rel(teams.dir),
       message: 'No teams are defined yet. Add one file per team in content/teams/.',
     });
   }
 
   // ---------- Streamlines ----------
 
-  const streamlinesDir = join(contentDir, 'streamlines');
-  const streamlineFiles = listFiles(streamlinesDir, ['.md']);
+  const streamlines = loadStreamlines(contentDir, repoRoot);
 
   /** id -> file, for resolving `supersedes` once everything is loaded. */
   const streamlineIds = new Map<string, string>();
-  const loaded: Array<{ file: string; id: string; data: ReturnType<typeof streamlineSchema.parse> }> =
-    [];
+  const loaded: Array<{ file: string; id: string; data: StreamlineData }> = [];
 
-  for (const file of streamlineFiles) {
-    const relativeId = file
-      .slice(streamlinesDir.length + 1)
-      .replace(/\.md$/, '')
-      .split(sep)
-      .join('/');
-
-    const segments = relativeId.split('/');
-
-    if (segments.length !== 2) {
-      errors.push({
-        file: rel(file),
-        message:
-          'Streamlines live one directory deep, as content/streamlines/<team-slug>/<streamline-slug>.md.',
-      });
-      continue;
-    }
-
-    const [dirSlug, streamlineSlug] = segments as [string, string];
-
-    if (!SLUG_PATTERN.test(streamlineSlug)) {
-      errors.push({
-        file: rel(file),
-        message: `"${streamlineSlug}" is not a usable slug. Name the file in lowercase-with-dashes.`,
-      });
-      continue;
-    }
-
-    let parsedFile: matter.GrayMatterFile<string>;
-    try {
-      parsedFile = matter(readFileSync(file, 'utf8'));
-    } catch (error) {
-      errors.push({
-        file: rel(file),
-        message: `The frontmatter block is not valid YAML. ${(error as Error).message}`,
-      });
-      continue;
-    }
+  for (const entry of streamlines.entries) {
+    const { file, teamSlug: dirSlug } = entry;
 
     // The directory is the source of truth for ownership; a mismatch means the
     // file was copied from another team and half-edited. Checked against the
     // raw value so it is reported even when the file has other problems —
     // otherwise the contributor fixes those, pushes, and only then learns
     // about this one.
-    const rawTeam = (parsedFile.data as Record<string, unknown>)['team'];
+    const rawTeam = entry.raw?.['team'];
     if (typeof rawTeam === 'string') {
       if (rawTeam !== dirSlug) {
         errors.push({
@@ -220,21 +119,14 @@ export function validateContent(contentDir: string, repoRoot: string): Validatio
       }
     }
 
-    const parsed = streamlineSchema.safeParse(parsedFile.data);
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        errors.push({
-          file: rel(file),
-          field: fieldPath(issue.path) || undefined,
-          message: issue.message,
-        });
-      }
+    if (!entry.data) {
+      errors.push(...entry.problems);
       continue;
     }
 
-    const data = parsed.data;
-    streamlineIds.set(relativeId, rel(file));
-    loaded.push({ file, id: relativeId, data });
+    const data = entry.data;
+    streamlineIds.set(entry.id, rel(file));
+    loaded.push({ file, id: entry.id, data });
 
     // ---------- Owners ----------
     //

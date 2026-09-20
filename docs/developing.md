@@ -159,8 +159,8 @@ Content is checked twice, by two things that share one set of schemas.
 **Layer 1 — `src/lib/schema.ts`.** Zod shapes for a *single file in isolation*:
 required fields, string lengths, valid dates, enum membership against the ids in
 `site.config.ts`. It is imported by `src/content.config.ts` (so the Astro build
-enforces it) **and** by `scripts/content-rules.ts` (so the CLI validator
-enforces the same thing). One definition, so CI and your editor cannot disagree.
+enforces it) **and** by `scripts/load-content.ts` (so the CLI validator enforces
+the same thing). One definition, so CI and your editor cannot disagree.
 
 **Layer 2 — `scripts/content-rules.ts`.** Everything a per-file schema cannot
 see: does that team file exist, does the `team:` field match the directory the
@@ -168,6 +168,13 @@ file is in, does the `supersedes:` target exist, do the timeline dates run in
 lifecycle order, is `effective` actually after `date`, is a winding-down
 streamline carrying an end date. It also warns — never errors — about an active
 streamline with no update in 180 days.
+
+Neither of those reads the disk. `scripts/load-content.ts` does, and it is the
+only thing outside Astro that does: it walks `content/`, parses each file, and
+hands back one entry per file with either the parsed data or the reason there is
+none. A streamline's id comes from where its file sits, and that derivation
+lives there once — two copies of it, drifting, would mean two ids for one
+streamline and nothing anywhere to notice.
 
 `scripts/validate-content.ts` is the thin CLI wrapper: it calls
 `validateContent()`, groups problems by file, prints warnings then errors, and
@@ -235,14 +242,16 @@ separate file, because one module cannot see two configurations.
 
 ### One import gotcha
 
-`src/lib/schema.ts` imports `'../../site.config'` and `scripts/content-rules.ts`
-imports `'../site.config'` and `'../src/lib/schema'` — relative paths, not the
-`@config` and `@/` aliases the rest of `src/lib` uses. That is the convention on
-the validator's import path, because those modules are loaded three different
-ways: by Vite during the build, by vitest, and by `tsx` from the command line.
-Relative paths resolve identically in all three. Keep them relative when you
-edit those two files, and remember that a change there has to satisfy
-`npm run validate` as well as `npm run build`.
+`src/lib/schema.ts` imports `'../../site.config'`, and everything under
+`scripts/` imports `'../site.config'` and `'../src/lib/…'` — relative paths, not
+the `@config` and `@/` aliases the rest of `src/lib` uses. That is the
+convention on the validator's import path, because those modules are loaded
+three different ways: by Vite during the build, by vitest, and by `tsx` from the
+command line. Relative paths resolve identically in all three; `@config` does
+not, because under `tsx` it is resolved against the current directory rather
+than the repo root. Keep them relative when you edit anything in `scripts/`, and
+remember that a change there has to satisfy `npm run validate` as well as
+`npm run build`.
 
 ---
 
