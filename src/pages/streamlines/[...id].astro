@@ -58,6 +58,25 @@ const retiringOn = terminalDate && isFuture(terminalDate.date) ? terminalDate : 
 const retiredOn = terminalDate && !isFuture(terminalDate.date) ? terminalDate : undefined;
 
 const nextMilestone = streamline.timeline.find((entry) => isFuture(entry.date));
+
+/**
+ * The line above the lifecycle card.
+ *
+ * With phases, that next milestone belongs to the streamline as a whole and not
+ * to the reader: their own audience has its own date, further down the same
+ * card. Saying so is the difference between a milestone and a promise the page
+ * cannot keep — "next: generally available in 4 weeks" is true of the thing and
+ * false of most of the people reading it.
+ */
+const lifecycleLede = [
+  nextMilestone
+    ? `Next: ${nextMilestone.stage.label.toLowerCase()} on ${formatDate(nextMilestone.date)}, ${relativeDays(nextMilestone.date)}.`
+    : 'No dates planned beyond today.',
+  streamline.phases.length > 0 ? 'Each audience arrives on its own schedule, below.' : '',
+]
+  .filter(Boolean)
+  .join(' ');
+
 const related = [
   supersededBy && { label: 'Replaced by', streamline: supersededBy },
   supersedes && { label: 'Replaces', streamline: supersedes },
@@ -151,31 +170,34 @@ const related = [
           >
             Lifecycle
           </h2>
-          <p class="mt-1.5 text-sm text-ink-secondary">
-            {
-              nextMilestone
-                ? `Next: ${nextMilestone.stage.label.toLowerCase()} on ${formatDate(nextMilestone.date)}, ${relativeDays(nextMilestone.date)}.`
-                : 'No dates planned beyond today.'
-            }
-          </p>
+          <p class="mt-1.5 text-sm text-ink-secondary">{lifecycleLede}</p>
 
-          <div class="mt-5 rounded-card border border-border bg-surface p-5 sm:p-6">
-            {
-              streamline.timeline.length > 0 ? (
-                <StageStepper streamline={streamline} />
-              ) : (
-                <p class="text-sm text-ink-muted">No dates recorded yet.</p>
-              )
-            }
+          {/*
+            One card, two readings of the same journey: the stepper for the
+            streamline as a whole, the phase rows for each audience inside it.
+            One box deliberately — as two sections they read as unrelated
+            claims, and a reader was left to work out on their own that
+            "rolling out" and a pilot already "generally available" are the
+            same rollout at two zoom levels.
+
+            Above the prose either way: "has it reached my team yet" is
+            something a reader acts on, and the page puts everything actionable
+            ahead of the author's own writing.
+          */}
+          <div class="mt-5 overflow-hidden rounded-card border border-border bg-surface">
+            <div class="p-5 sm:p-6">
+              {
+                streamline.timeline.length > 0 ? (
+                  <StageStepper streamline={streamline} />
+                ) : (
+                  <p class="text-sm text-ink-muted">No dates recorded yet.</p>
+                )
+              }
+            </div>
+
+            {streamline.phases.length > 0 && <RolloutPhases phases={streamline.phases} />}
           </div>
         </section>
-
-        {/*
-          Above the prose, with the stepper: "has it reached my team yet" is
-          something a reader acts on, and the page puts everything actionable
-          ahead of the author's own writing.
-        */}
-        {streamline.phases.length > 0 && <RolloutPhases phases={streamline.phases} />}
 
         {
           hasBody && (

@@ -259,14 +259,23 @@ around its dot. Under the heading, a line summarises the next move — "Next:
 deprecated on 1 March 2027, in 5 months." — or says "No dates planned beyond
 today."
 
-**Rollout phases**, where a streamline has them, sit under the stepper. Some
-things land for everyone on one day; most arrive in waves, and the stepper can
-only tell you about the wave in front. The tracker splits that out: one row per
-group, each row leading with who it is, then the stage that group is at and the
-dates for it. Your row is the one to read. The stepper says a thing is rolling
-out; the phase tracker says whether it is rolling out *to you*.
+**Rollout phases**, where a streamline has them, sit in the same box as the
+stepper, under a **By audience** line. They are not a second subject — they are
+the same lifecycle told one group at a time. Some things land for everyone on
+one day; most arrive in waves, and the stepper can only tell you about the wave
+in front. The rows split that out: one per group, each leading with who it is,
+then the stage that group is at and the dates for it. Your row is the one to
+read. The stepper says a thing is rolling out; the rows say whether it is
+rolling out *to you*.
 
-The row a highlight sits on is the wave in motion — the line above the tracker
+That is also why a row can sit further along than the stepper does. A pilot
+group reaching general availability while the streamline as a whole is still
+rolling out is not a contradiction; it is what a phased rollout looks like from
+inside. When a streamline has phases, the summary line above the box says so
+too — the next milestone up there belongs to the whole thing, and each audience
+arrives on its own schedule.
+
+The row a highlight sits on is the wave in motion, and the **By audience** line
 names its audience, so "Currently reaching the pilot teams" is readable without
 studying the table. Faded rows are groups that already have it, kept as a record
 rather than removed. Rows in neither state are still ahead: the date on one is a

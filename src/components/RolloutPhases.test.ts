@@ -32,7 +32,7 @@ describe('RolloutPhases', () => {
     // component that throws on an empty list is a trap for the next caller.
     const html = await render([]);
 
-    expect(html).toContain('Rollout phases');
+    expect(html).toContain('By audience');
     expect(html).not.toContain('aria-current');
   });
 
@@ -103,5 +103,17 @@ describe('RolloutPhases', () => {
 
     expect(html).toContain('Generally available');
     expect(html).toContain('Proposed');
+  });
+
+  it('is a block inside the lifecycle card, not a section of its own', async () => {
+    // The whole point of the nesting: the phase rows are the lifecycle told per
+    // audience, so they belong under the page's Lifecycle h2 rather than beside
+    // it. A section with its own h2 here puts the two back to being peers in
+    // the document outline, whatever the borders happen to look like.
+    const html = await render([phase('Phase 1', 'Pilot teams', 'rolling-out')]);
+
+    expect(html).not.toContain('<section');
+    expect(html).not.toContain('<h2');
+    expect(html).toContain('<h3');
   });
 });

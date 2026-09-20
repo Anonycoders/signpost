@@ -7,6 +7,12 @@ import { phaseEmphasis, phaseSummary, type Phase } from '@/lib/phases';
  * The audience-by-audience rollout, as a tracker a reader can find themselves
  * in.
  *
+ * Rendered inside the lifecycle card rather than as a section of its own,
+ * because that is what it is: the same journey, told per audience. As two peer
+ * sections the page implied the opposite — that a stepper ringing "rolling out"
+ * and a row reading "generally available" were two unrelated claims, when the
+ * second is the first seen from one team's desk.
+ *
  * The question this answers is not "how far along is this" — the stage stepper
  * above already says that — but "has it reached me yet". So every row leads
  * with who, and the stage is the answer rather than the subject.
@@ -28,14 +34,30 @@ const rows = phases.map((phase, index) => ({ phase, emphasis: emphasis[index]! }
 const summary = phaseSummary(phases);
 ---
 
-<section aria-labelledby="phases-heading">
-  <h2 id="phases-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-    Rollout phases
-  </h2>
-  <p class="mt-1.5 text-sm text-ink-secondary">{summary}</p>
+<div class="border-t border-border">
+  {/*
+    An h3 under the page's Lifecycle h2, not a peer of it. The document outline
+    is the cheapest place to state the relationship, and it is the one place a
+    screen reader gets it without being told twice.
 
-  <div class="mt-5 overflow-hidden rounded-card border border-border bg-surface">
-    <ul class="divide-y divide-border">
+    Heading and summary share a line where there is room and stack where there
+    is not, so the eyebrow reads as a label on the sentence rather than as the
+    start of a new section.
+  */}
+  <div class="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 px-5 pt-5 sm:px-6">
+    <h3 id="audiences-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+      By audience
+    </h3>
+    <p class="text-sm text-ink-secondary">{summary}</p>
+  </div>
+
+  {/*
+    `pb-2` so the last row sits the same distance off the bottom of the card as
+    the stepper sits off the top. Rows carry their own padding, which leaves
+    them 8px short of it on their own.
+  */}
+  <div class="mt-3 pb-2">
+    <ul class="divide-y divide-border" aria-labelledby="audiences-heading">
       {
         rows.map(({ phase, emphasis: weight }) => (
           <li
@@ -71,4 +93,4 @@ const summary = phaseSummary(phases);
       }
     </ul>
   </div>
-</section>
+</div>
