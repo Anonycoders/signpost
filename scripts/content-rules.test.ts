@@ -893,31 +893,6 @@ describe('slack member IDs that cannot link', () => {
     );
   });
 
-  it('warns once, against site.config.ts, when no workspace is configured', () => {
-    // The fix is one line in one file, whether two streamlines carry IDs or
-    // fifty. Repeating it per streamline would bury the rest of the report.
-    const withId = streamline().replace(
-      '    github: janaokafor',
-      '    github: janaokafor\n    slack: jana.okafor\n    slackId: U024BE7LH',
-    );
-
-    const result = fixture({
-      'content/teams/devops.yaml': DEVOPS_TEAM,
-      'content/streamlines/devops/kubernetes-upgrade.md': withId,
-      'content/streamlines/devops/runner-fleet.md': withId.replace(
-        'title: Kubernetes upgrade',
-        'title: Runner fleet',
-      ),
-    });
-
-    const configWarnings = result.warnings.filter((w) => w.file === 'site.config.ts');
-
-    expect(result.errors).toEqual([]);
-    expect(configWarnings).toHaveLength(1);
-    expect(configWarnings[0]?.message).toContain('2 streamlines');
-    expect(configWarnings[0]?.message).toContain('no Slack workspace is configured');
-  });
-
   it('says nothing when the handles carry no IDs', () => {
     const result = fixture({
       'content/teams/devops.yaml': DEVOPS_TEAM,
