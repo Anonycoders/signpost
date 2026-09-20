@@ -70,5 +70,6 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
-      # Adopters who want a Slack/Teams ping on every publish can add a step
-      # here; the site's Atom feed at /feed.xml covers this out of the box.
+      # No chat notification belongs here. A ping on every publish announces
+      # that a build happened, which is not what anyone needs to know;
+      # announce.yml works out what actually changed and says that instead.

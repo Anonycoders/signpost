@@ -184,6 +184,8 @@ catalog, on your team page and in the Atom feed as soon as it merges.
 | `links` | no | `label` + full `url`. Migration guides, dashboards, docs |
 | `supersedes` | no | `team-slug/streamline-slug` of the thing this replaces |
 | `phases` | no | The rollout, audience by audience — see below |
+| `announceChannel` | no | Send this one's announcements somewhere else — see below |
+| `announce` | no | `false` keeps this one out of the announcements |
 | `updates` | no | Newest first |
 
 ### Reaching an owner on Slack
@@ -213,6 +215,58 @@ This only works if your instance has been pointed at your workspace —
 `slackWorkspaceUrl` in [site.config.ts](site.config.ts), set once for everyone.
 If it has not been, the validator will tell you rather than leaving you with
 handles that quietly refuse to link.
+
+### Announcing changes in chat
+
+Only relevant if your instance has this turned on — if it has not, every field
+here is ignored and you can skip the section. When it is on, a scheduled job
+posts what changed to Slack, so that people who depend on your work hear about a
+date moving without having to visit the site.
+
+You do not mark anything as announced. The job works out what has changed since
+it last looked, and the first time it sees a streamline it records it silently —
+so adding a file, however much history is in it, never floods a channel.
+
+Three fields let you steer it.
+
+```yaml
+announceChannel: '#data-platform-news' # this one goes somewhere else
+announce: false # or nowhere at all
+```
+
+`announceChannel` overrides the channel your team is announced in, for the one
+thing that matters to a different audience than everything else you own. Write
+it as `#channel-name`, or as the channel ID Slack shows under **View channel
+details** (`C0123ABCD`) — an ID survives the channel being renamed. The same
+field on `content/teams/<team>.yaml` sets it for everything that team owns.
+
+Note that this is **not** the team's existing `channel:` field. That one is
+inbound: where someone goes to ask you a question. This one is outbound, usually
+a channel your consumers are in rather than one you work in.
+
+`announce: false` keeps a streamline quiet. Its changes are still recorded, so
+turning it back on later says nothing about the months it was off — it picks up
+from that moment.
+
+And on a single update:
+
+```yaml
+updates:
+  - date: 2026-09-10
+    impact: breaking
+    title: Ingress v1beta1 is removed on 2 November
+    body: |
+      The long version, with headings and a table, for someone on the page.
+    announcement: >-
+      Your Ingress manifests stop working on 2 November. The migration guide has
+      a one-line fix.
+```
+
+Without `announcement`, the chat message carries a shortened `body`. Add one
+when the body would not survive the trip — too long, leaning on formatting chat
+cannot carry, or written for someone who is already reading the page. Either way
+the title and a link to the update are put around it, so an announcement can
+never leave a reader with no way through to the detail.
 
 ### Rollout phases
 
@@ -316,6 +370,8 @@ error content/streamlines/devops/jenkins-pipelines.md
   enough to collide once shortened — either way they would share one link on the
   page and one entry in the feed, and the second would effectively vanish
 - Two phase names that differ only in their punctuation
+- An `announceChannel` written as a bare name. Slack will not resolve one, so it
+  has to be `#channel-name` or a channel ID
 
 **It will warn, but let you merge:**
 
@@ -325,6 +381,9 @@ error content/streamlines/devops/jenkins-pipelines.md
   and the dates say a later one, and a reader has no way to know which is right.
 - A `slackId` with no `slack` handle beside it, or with no workspace configured
   for the site — either way the ID does nothing, and silently.
+- A streamline whose changes would be announced but which resolves to no
+  channel. The job would work out what changed and then drop it, which looks
+  from the outside exactly like a streamline that never changed.
 
 Nothing in the validator cares about prose. It cannot tell you that your update
 is vague, so that part is on you and your reviewer.

@@ -102,6 +102,8 @@ Everything an organization needs to change lives in [`site.config.ts`](site.conf
 
 **Feeds, so nobody has to remember to look.** A site-wide Atom feed at `/feed.xml` and one per team, hand-built to Atom 1.0 (RFC 4287) with stable entry IDs — so a feed reader, a Slack integration or a Teams connector can subscribe once and get every announcement.
 
+**It comes to you, if you want it to.** An optional scheduled job posts what changed to Slack — stage dates moving, phase dates moving, new updates — routed per team or per streamline, so the people who depend on your work hear about a retirement date without visiting a roadmap. Off unless configured, and its first run is deliberately silent so turning it on never floods a channel. See [docs/adopting.md](docs/adopting.md#announcing-changes-in-slack).
+
 **A nightly rebuild.** "Landing in 60 days" is only true on the day it is built, so the deploy workflow also runs on a schedule. The rationale is in [docs/adopting.md](docs/adopting.md#5-deploy-to-pages).
 
 **It prints.** The roadmap and the changes log have print stylesheets, for the people who bring a roadmap to a planning meeting on paper. One known limitation: a roadmap that spans more than one printed page does not repeat the quarter headers on the second page.
@@ -120,9 +122,12 @@ src/
 scripts/
   content-rules.ts             the validation rules
   validate-content.ts          the CLI wrapper CI runs
+  announcements.ts             what is worth announcing — pure, no IO
+  announce.ts                  the CLI that reads, posts and records
 .github/
   workflows/ci.yml             validate + check + test on every PR
   workflows/deploy.yml         build + publish to Pages on main and nightly
+  workflows/announce.yml       post what changed to Slack, if configured
   CODEOWNERS                   which team reviews which directory
 ```
 

@@ -14,6 +14,7 @@
     "check": "astro check",
     "sync": "astro sync",
     "validate": "tsx scripts/validate-content.ts",
+    "announce": "tsx scripts/announce.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

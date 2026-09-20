@@ -1,0 +1,115 @@
+name: Announce
+
+# Posts what has changed to Slack, on a schedule.
+#
+# Inert until somebody turns it on: with no `announcements` block in
+# site.config.ts the script exits 0 without doing anything, so a fork that
+# merges this file and ignores it gets a job that costs a few seconds and says
+# nothing. Turning it on takes two things — that config block, and a
+# SLACK_BOT_TOKEN repository secret. See docs/adopting.md.
+#
+# The record of what has already been said lives in announced.json on the
+# `signpost-state` branch, which holds nothing else and is never merged into
+# main. Keeping it off main means the bot never touches content/, never opens a
+# pull request, and never triggers a rebuild of the site.
+on:
+  # Once each weekday morning. Change this to suit the people reading it: a
+  # channel that gets a digest at nine is read, one that gets a ping at three in
+  # the morning is muted.
+  schedule:
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Print what would be posted. Post nothing, record nothing.'
+        type: boolean
+        default: false
+
+permissions:
+  # Only to push the ledger to its own branch. The site is built by deploy.yml
+  # from main, which this workflow never writes to.
+  contents: write
+
+# Two runs at once would both read the same ledger, both decide the same
+# changes are news, and both post them.
+concurrency:
+  group: announce
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    name: Announce changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the content
+        uses: actions/checkout@v7
+
+      - name: Check out the ledger
+        id: ledger
+        uses: actions/checkout@v7
+        continue-on-error: true
+        with:
+          ref: signpost-state
+          path: state
+
+      - name: Start a ledger, on the first run only
+        if: steps.ledger.outcome == 'failure'
+        run: |
+          git init -b signpost-state state
+          git -C state remote add origin \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show what would be posted
+        if: inputs.dry-run
+        run: npm run announce -- --state state --dry-run
+
+      - name: Work out what to say
+        if: ${{ !inputs.dry-run }}
+        run: npm run announce -- --state state
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # Deliberately before the posting step, and the reason a run is split in
+      # two. If this push fails, nothing has been said and the next run says it
+      # instead — a red workflow and a day's delay. The other order risks saying
+      # something and then losing the record of having said it, which sends the
+      # same messages again tomorrow.
+      - name: Reserve what is about to be said
+        if: ${{ !inputs.dry-run }}
+        working-directory: state
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add announced.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Reserve announcements for $(date -u +%Y-%m-%d)"
+          git push origin HEAD:signpost-state
+
+      - name: Post to Slack
+        id: post
+        if: ${{ !inputs.dry-run }}
+        run: npm run announce -- --state state --send
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # Runs even when the step above failed, because that is exactly when there
+      # is something to undo: a message written down as sent that was then not
+      # sent. Releasing its key is what lets the next run try again and say the
+      # same thing it would have said. Skipped when the posting step never ran,
+      # since an unpushed reservation is not a reservation.
+      - name: Release anything that could not be posted
+        if: ${{ always() && (steps.post.outcome == 'success' || steps.post.outcome == 'failure') }}
+        working-directory: state
+        run: |
+          git add announced.json || exit 0
+          git diff --cached --quiet && exit 0
+          git commit -m "Release announcements that could not be posted"
+          git push origin HEAD:signpost-state

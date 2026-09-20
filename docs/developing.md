@@ -22,6 +22,7 @@ things are before you change one of them.
 - [Feeds](#feeds)
 - [CI](#ci)
 - [Deploy](#deploy)
+- [Announcements](#announcements)
 - [What not to hardcode](#what-not-to-hardcode)
 
 ---
@@ -498,6 +499,61 @@ The same workflow runs on a nightly `schedule`, because "today" is baked in at
 build time — relative dates, the today marker on the roadmap, and the split
 between upcoming and recent changes — so without it a repository nobody merges
 to for a fortnight serves a fortnight-old idea of now.
+
+## Announcements
+
+[`.github/workflows/announce.yml`](../.github/workflows/announce.yml) posts what
+has changed to Slack on a schedule. It does nothing at all unless an adopter
+fills in `announcements` in `site.config.ts` and adds a `SLACK_BOT_TOKEN`
+secret, so a fork that merges the file and ignores it is unaffected.
+
+Three modules, split along the line that decides what is testable:
+
+| File | Does | Touches |
+| --- | --- | --- |
+| [`scripts/announcements.ts`](../scripts/announcements.ts) | works out what is news and writes the sentences | nothing — no disk, no network, no clock |
+| [`scripts/slack.ts`](../scripts/slack.ts) | one `chat.postMessage` call | the network |
+| [`scripts/announce.ts`](../scripts/announce.ts) | the CLI that joins them up | the disk, the config, the content |
+
+`collectAnnouncements` takes today, the ledger, the lifecycle and the locale as
+arguments and returns a list of messages. That is not fastidiousness: the
+question that decides whether this feature is usable is "would this run have
+sent fifty messages?", and it can only be asked cheaply if the answer does not
+depend on the calendar or on a Slack workspace.
+
+**The rule everything else follows from: a streamline the ledger has never seen
+announces nothing.** Its keys are recorded and the run moves on. A roadmap of any
+age holds dozens of dated things and most of them are in the future, so a
+lookback window cannot save a first run — only seeding can. It also makes bulk
+imports safe and turns a lost ledger into one quiet day rather than a burst.
+
+The ledger is `announced.json` on the `signpost-state` branch. Keys are
+`<streamlineId>#<subject>#<reason>`, three parts so that a later pass can add
+deadline reminders (`#t-30`, `#t-7`) without re-keying anything that exists. The
+stored value is a fingerprint of what was true when the message went out, which
+is what produces "moved from X to Y" rather than a second "added".
+
+**The ordering matters and is easy to get backwards.** A run writes every key it
+intends to use into the ledger and pushes that *before* it posts anything. If the
+push fails, nothing has been said: a red workflow and a day's delay. The other
+order risks saying something and then losing the record of having said it, which
+sends the same messages again tomorrow. The cost is that a message which then
+fails to post is already written down, so `--send` releases exactly those keys
+and the workflow pushes that correction under `if: always()`.
+
+Two things not to change without thinking them through. Messages name dates
+rather than states, because `status` and `timeline` are authored separately and a
+state claim can contradict the page it links to. And `announce` is
+`z.boolean().optional()` rather than defaulted to `true`, because Astro caches
+parsed content entries by file digest — a schema default never re-runs for an
+unchanged file, so a defaulted boolean is `true` for files somebody has edited
+and `undefined` for the rest.
+
+To see what a run would say, without a token and without writing anything:
+
+```bash
+npm run announce -- --dry-run
+```
 
 ---
 

@@ -253,12 +253,13 @@ months, which is the feedback loop that keeps a fork honest.
 
 ## 5. Deploy to Pages
 
-The repository ships two workflows:
+The repository ships three workflows:
 
 | Workflow | Runs on | Does |
 | --- | --- | --- |
 | [`ci.yml`](../.github/workflows/ci.yml) | every pull request | validate → type-check → test → build |
 | [`deploy.yml`](../.github/workflows/deploy.yml) | push to `main`, nightly, manual | build → upload → deploy to Pages |
+| [`announce.yml`](../.github/workflows/announce.yml) | a schedule, manual | post what changed to Slack — inert unless configured |
 
 On github.com, and on GitHub Enterprise with Actions and Pages enabled:
 
@@ -267,8 +268,9 @@ On github.com, and on GitHub Enterprise with Actions and Pages enabled:
 3. Watch the **Deploy** workflow. It publishes to the URL shown on the
    `github-pages` environment.
 
-That is the whole setup. There is nothing to provision, no secrets to add, and
-no runtime to keep patched.
+That is the whole setup. There is nothing to provision and no runtime to keep
+patched. The one thing that ever needs a secret is announcing changes in Slack,
+which is optional and described below; publishing the site itself needs none.
 
 ### URLs and the base path
 
@@ -313,13 +315,94 @@ keeps the site honest without anyone doing anything.
 
 Move the time if it collides with something; keep the job.
 
-### Notifications
+### Announcing changes in Slack
 
-`deploy.yml` ends with a comment marking where a Slack or Teams webhook step
-goes, if you want a ping on every publish. Before you build that: the site
-already publishes an Atom feed at `/feed.xml`, and one per team at
-`/teams/<slug>/feed.xml`. Most chat platforms can subscribe to a feed directly,
-which gives people per-team granularity and costs you nothing to maintain.
+Everything above publishes a site. A site can only tell people what changed if
+they come and look, and the thing this project exists to prevent — somebody
+finding out about a shutdown after it happened — still happens to everyone who
+does not visit.
+
+The site publishes an Atom feed at `/feed.xml`, and one per team at
+`/teams/<slug>/feed.xml`, and most chat platforms can subscribe to a feed
+directly. If that is enough for you, it costs nothing to maintain and you can
+stop reading here. Be clear about what it is, though: **the feed carries updates
+only.** It says nothing when a streamline reaches a stage, nothing when a phase
+date moves, and nothing ahead of a retirement date. It has no per-team routing
+beyond one feed per team, and everybody in the channel gets everything.
+
+The alternative is [`announce.yml`](../.github/workflows/announce.yml), a
+scheduled job that reads the content, works out what has changed since it last
+looked, and posts it to the channels you name. It is off until you configure it.
+
+**1. Make a Slack app and let it post.** At <https://api.slack.com/apps>, create
+an app, add the `chat:write` bot scope under **OAuth & Permissions**, install it
+to your workspace, and copy the bot token — it starts `xoxb-`.
+
+**2. Invite it to the channels.** Type `/invite @YourAppName` in each channel you
+are going to name below. A bot can post only where it has been invited, and
+`not_in_channel` is the one failure everybody hits first.
+
+**3. Add the token as a repository secret** named `SLACK_BOT_TOKEN`, under
+**Settings → Secrets and variables → Actions**. It never goes in
+`site.config.ts`.
+
+**4. Turn it on** in `site.config.ts`:
+
+```ts
+announcements: {
+  siteUrl: 'https://acmeco.github.io/signpost',
+  channel: '#platform-news',
+},
+```
+
+`siteUrl` is the only required field, and it is written out rather than derived
+because the announcer is a plain Node script — there is no Astro build around it
+to ask where the site lives. Every message links back here, so getting it wrong
+produces announcements nobody can act on. `channel` is the fallback; a team or a
+single streamline can name its own, and `npm run validate` tells you about any
+streamline that would have nowhere to go. Two more optional fields, `lookbackDays`
+and `maxPerRun`, are documented on the type itself.
+
+**The first run says nothing.** A roadmap with any history in it holds dozens of
+dated things, most of them in the future, and a job that announced what it found
+on day one would arrive as a burst that gets the channel muted for good. So a
+streamline the job has never seen is recorded silently, and only what changes
+*after* that is announced. The same rule makes bulk imports safe: add fifty
+streamlines in one pull request and the channel stays quiet.
+
+**What it remembers, and where.** A file called `announced.json` on a branch
+named `signpost-state`, which holds nothing else and is never merged into `main`.
+Keeping it off `main` is deliberate: the job never touches `content/`, never
+opens a pull request, and never triggers a rebuild of the site. The branch is
+created on the first run; you do not need to make it.
+
+**Messages name dates, not states.** "Retirement moved from 31 March 2027 to 30
+June 2027", never "this is now deprecated". A streamline's `status` and its
+`timeline` are written by hand and separately, so a message claiming a state can
+contradict the page it links to. A date cannot, and a date is what a reader has
+to plan around.
+
+**Before you turn it on for real**, see what it would say:
+
+```bash
+npm run announce -- --dry-run
+```
+
+That prints the messages and writes nothing — no ledger, no posts. It needs no
+token.
+
+**One caveat about the schedule.** GitHub disables scheduled workflows on a
+**public** repository after 60 days with no activity in it. A roadmap that
+nobody has touched for two months is exactly the kind that is holding a
+retirement date somebody has forgotten, so this is worth knowing: if your
+instance is public and quiet, re-enable the workflow from the Actions tab, or
+run it by hand from there. Internal repositories and GitHub Enterprise are not
+affected.
+
+Per-streamline controls — sending one streamline somewhere else, keeping one
+quiet, or overriding the text of a single announcement — are in
+[CONTRIBUTING.md](../CONTRIBUTING.md), because they live in the content files
+rather than here.
 
 ---
 
