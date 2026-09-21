@@ -17,6 +17,7 @@
     "schema": "tsx scripts/json-schema.ts",
     "announce": "tsx scripts/announce.ts",
     "release-notes": "tsx scripts/changelog.ts",
+    "release": "tsx scripts/release.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -179,8 +179,13 @@ export function changelogProblems(text: string): string[] {
   return problems;
 }
 
+/** Whether a string is a version number and not, say, a tag or a word. */
+export function isVersion(value: string): boolean {
+  return SEMVER.test(value);
+}
+
 /** Newest first: positive when `a` is the later version. */
-function compareVersions(a: string, b: string): number {
+export function compareVersions(a: string, b: string): number {
   const [x, y] = [a, b].map((version) => version.split('.').map(Number));
 
   for (let index = 0; index < 3; index += 1) {
@@ -227,7 +232,7 @@ export function releaseNotes(text: string, tag: string): string {
       [
         `CHANGELOG.md has no section for ${version}.`,
         '',
-        `A release is made of what is already written down, so the section has to exist before the tag does. Move [${UNRELEASED}] under "## [${version}] - ${today()}", add the link definition, commit, then tag.`,
+        `A release is made of what is already written down, so the section has to exist before the tag does. \`npm run release -- ${version}\` does that for you; docs/releasing.md has the manual sequence if you would rather.`,
         '',
         'docs/releasing.md has the whole sequence.',
       ].join('\n'),
@@ -261,13 +266,13 @@ export function versionProblem(packageVersion: string, tag: string): string | un
 }
 
 /**
- * Today in UTC, for the date suggested in an error message.
+ * Today, in UTC, as a version heading writes it.
  *
- * UTC rather than the releaser's own midnight, because the heading it goes into
- * sits beside a tag that GitHub dates in UTC, and two dates a day apart for the
- * same release is the kind of thing somebody later tries to explain.
+ * UTC rather than the releaser's own midnight, because the heading sits beside
+ * a tag that GitHub dates in UTC, and two dates a day apart for the same
+ * release is the kind of thing somebody later tries to explain.
  */
-function today(): string {
+export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
