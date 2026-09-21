@@ -20,6 +20,7 @@ Everything below is arranged around that question.
 - [The changelog](#the-changelog)
 - [Making a release](#making-a-release)
 - [What the workflow does](#what-the-workflow-does)
+- [Cutting a release by hand](#cutting-a-release-by-hand)
 
 ---
 
@@ -95,45 +96,44 @@ There is no rule about when. When `Unreleased` has enough in it to be worth
 somebody's attention, release it; a run of one-line patch releases is noise, and
 a year of unreleased changes means the changelog is the only record of anything.
 
-Releasing is editing a file, then pushing a tag.
+Releasing is one command, then two.
 
-1. **Close the section.** Change `## [Unreleased]` to `## [1.3.0] - 2026-09-21`
-   with today's date in UTC, and open a fresh empty `## [Unreleased]` above it
-   with its own `**Upgrading:** Nothing to do.` Read what you are about to
-   publish while you are in there — this is the last moment it is easy to
-   reword.
+```bash
+npm run release -- 1.3.0
+```
 
-2. **Add the link definitions** at the foot of the file, and repoint
-   `[Unreleased]`:
+That closes `Unreleased` under `## [1.3.0]` with today's date in UTC, opens a
+fresh `Unreleased` above it, repoints `[Unreleased]` and adds `[1.3.0]` at the
+foot of the file, sets the version in `package.json`, and commits both as
+`Cut 1.3.0`. Then it prints the notes it is about to publish and the two
+commands left:
 
-   ```markdown
-   [Unreleased]: https://github.com/Anonycoders/signpost/compare/v1.3.0...HEAD
-   [1.3.0]: https://github.com/Anonycoders/signpost/compare/v1.2.0...v1.3.0
-   ```
+```bash
+git push origin main
+git tag -a v1.3.0 -m 'Signpost 1.3.0' && git push origin v1.3.0
+```
 
-3. **Set the version** in `package.json` to match.
+The push and the tag are deliberately not automated. Everything up to them is
+reversible — the cut is one local commit, and `git reset --soft HEAD~1` takes it
+back — and everything after them is not.
 
-4. **Check it reads the way you meant**, exactly as the workflow will:
-
-   ```bash
-   npm run --silent release-notes -- v1.3.0
-   ```
-
-   That prints the body of the release, or tells you in words what is wrong with
-   the file. `npm test` catches the same problems on the pull request.
-
-5. **Commit and push** the changelog and `package.json` together, through a pull
-   request like anything else.
-
-6. **Tag the merged commit** and push the tag:
-
-   ```bash
-   git tag -a v1.3.0 -m 'Signpost 1.3.0'
-   git push origin v1.3.0
-   ```
+It refuses rather than guesses. A version that is not newer than the last one, a
+version already in the file, an `Unreleased` section with no entries under it (so
+running the command twice fails the second time), a changelog that is not valid
+to begin with, or uncommitted edits sitting in either file — each stops the cut
+with a sentence saying which. Read the printed notes before you tag; that is the
+last easy moment to reword them.
 
 The tag carries a `v`; the changelog heading does not. That is the convention
-both ends of, and the script accepts either spelling.
+both ends of, and both commands accept either spelling.
+
+> **If `Unreleased` starts collecting merge conflicts**, because several pull
+> requests are open at once and all of them append to the same few lines, the
+> usual answer is [changesets](https://github.com/changesets/changesets): each
+> PR adds its own small file and the tool assembles them at release time. It is
+> more machinery than this repository needs today — nothing here is published to
+> a package registry, and conflicts in a handful of bullet points are cheap to
+> resolve — but it is the escape hatch, and it keeps hand-written notes.
 
 ## What the workflow does
 
@@ -150,3 +150,36 @@ is.
 The checks run again here even though they almost certainly ran on this commit
 already, because a tag can be pushed from anywhere, and a release is the one
 thing this repository produces that outlives a mistake.
+
+## Cutting a release by hand
+
+`npm run release` only does what a person would do to the file, and a fork
+without a working Node setup — or anyone who would simply rather see it — can do
+the same four edits directly.
+
+1. **Close the section.** Change `## [Unreleased]` to `## [1.3.0] - 2026-09-21`
+   with today's date in UTC, and open a fresh empty `## [Unreleased]` above it
+   with its own `**Upgrading:** Nothing to do.`
+
+2. **Update the link definitions** at the foot of the file:
+
+   ```markdown
+   [Unreleased]: https://github.com/Anonycoders/signpost/compare/v1.3.0...HEAD
+   [1.3.0]: https://github.com/Anonycoders/signpost/compare/v1.2.0...v1.3.0
+   ```
+
+   A first release has no range to compare against, so it links to its own tag
+   page instead: `…/releases/tag/v1.3.0`.
+
+3. **Set the version** in `package.json` to match.
+
+4. **Read it back**, exactly as the workflow will:
+
+   ```bash
+   npm run --silent release-notes -- v1.3.0
+   ```
+
+   That prints the body of the release, or says in words what is wrong with the
+   file. `npm test` catches the same problems on a pull request.
+
+Then commit both files together, push, and tag.

@@ -669,6 +669,15 @@ To see a release exactly as it would be published:
 npm run --silent release-notes -- v0.1.0
 ```
 
+[`scripts/release.ts`](../scripts/release.ts) is the other half, and the one run
+on release day: `npm run release -- 1.3.0` closes `Unreleased` under a dated
+heading, opens a fresh one, updates the link definitions, sets the version in
+`package.json` and commits both. It imports `changelog.ts` rather than repeating
+any of it, and holds its own output to `changelogProblems` before writing —
+producing a file the release workflow would reject is a bug here, and it says
+so in those words. Pushing and tagging are not automated, because the commit it
+makes is the last reversible step.
+
 Who releases, when, and what the numbers promise a fork are in
 [docs/releasing.md](releasing.md).
 
