@@ -12,10 +12,12 @@ version numbers mean something specific for a fork that merges updates — see
 
 ## [Unreleased]
 
-**Upgrading:** Nothing to do, unless you forked a fork rather than Signpost
-itself. In that case set `template.url` in `site.config.ts` to the repository
-you actually forked, or `npm run update` will offer to take its updates from
-ours.
+**Upgrading:** The merge that brings this one is necessarily a manual one — the
+command does not exist in your fork until it has landed. `git fetch template &&
+git merge template/main`; docs/adopting.md has the longer version. Every update
+after it is `npm run update`. And if you forked a fork rather than Signpost
+itself, set `template.url` in `site.config.ts` to the repository you actually
+forked, or the command will offer to take its updates from ours.
 
 ### Added
 

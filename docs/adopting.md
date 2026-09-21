@@ -498,6 +498,22 @@ cost you. Drop `--dry-run` and the same report is followed by the merge.
 Mind the `run`. `npm update` without it is npm's own command and updates your
 dependencies, which is a different thing entirely.
 
+**If your fork predates the command**, that will fail with
+`Missing script: "update"`, because the command arrives in the very update you
+are trying to take. Do the first merge by hand and it brings itself with it:
+
+```bash
+git remote add template https://github.com/Anonycoders/signpost
+git fetch template
+git merge template/main
+```
+
+Skip the first line if you already have the remote, and point it at whichever
+repository you actually forked if that was not Signpost itself. Read the
+`**Upgrading:**` notes in the template's `CHANGELOG.md` before you merge rather
+than after — that is the one time you have to find them yourself. From the next
+update on, the command does it for you.
+
 It refuses to start if you have uncommitted changes, because `git merge --abort`
 puts back the merge and not work that was never committed. It never pushes: the
 merge is one local commit, `git reset --hard ORIG_HEAD` undoes it, and what to
