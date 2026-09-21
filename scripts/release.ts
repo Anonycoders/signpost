@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,7 +20,7 @@ import { siteConfig } from '../site.config';
  * Everything this does was a step somebody followed by hand, and the hand
  * version had a failure mode worth removing. The first real release of this
  * repository was tagged before its section existed, because moving a heading,
- * repointing two link definitions and setting a version in a second file are
+ * repointing two link definitions and setting a version in two more files are
  * four chances to do three of them. The release workflow caught it — it is
  * built to — but being caught at the tag is a worse place to find out than
  * being caught before the commit.
@@ -175,6 +175,35 @@ export function setPackageVersion(text: string, version: string): string {
   return text.replace(PACKAGE_VERSION, `$1${version}$3`);
 }
 
+/**
+ * package-lock.json with the same version set, in the two places it records
+ * this package's own.
+ *
+ * `npm ci` does not object to a lockfile whose version disagrees with
+ * package.json — so this is tidiness, not a gate. What it prevents is the next
+ * `npm install` anybody runs quietly rewriting the file and leaving a stray
+ * two-line diff to explain, weeks after the release that caused it.
+ *
+ * Parsed rather than pattern-matched, because the file holds a `"version"` for
+ * every dependency and several of them will read 0.1.0 by coincidence. npm
+ * writes it as two-space JSON with a trailing newline, which is what this
+ * writes back, so an untouched lockfile round-trips byte for byte.
+ */
+export function setLockfileVersion(text: string, version: string): string {
+  const lock = JSON.parse(text) as { version?: string; packages?: Record<string, { version?: string }> };
+
+  if (typeof lock.version !== 'string') {
+    throw new Error('package-lock.json has no "version" field to set.');
+  }
+
+  lock.version = version;
+
+  const root = lock.packages?.[''];
+  if (root && typeof root.version === 'string') root.version = version;
+
+  return `${JSON.stringify(lock, null, 2)}\n`;
+}
+
 function git(...args: string[]): string {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
 }
@@ -186,11 +215,11 @@ function git(...args: string[]): string {
  * stays uncommitted. Edits to these two files are a different matter: they
  * would be swept into a commit that says only "Cut 1.2.3".
  */
-function refuseIfDirty(): void {
+function refuseIfDirty(paths: string[]): void {
   let dirty: string;
 
   try {
-    dirty = git('status', '--porcelain', '--', 'CHANGELOG.md', 'package.json');
+    dirty = git('status', '--porcelain', '--', ...paths);
   } catch {
     throw new Error(
       'Cannot run git here, so this cannot make the commit. docs/releasing.md has the steps to cut a release by hand.',
@@ -200,11 +229,11 @@ function refuseIfDirty(): void {
   if (dirty !== '') {
     throw new Error(
       [
-        'CHANGELOG.md or package.json has uncommitted changes:',
+        'A file this cut rewrites has uncommitted changes:',
         '',
         dirty,
         '',
-        'Commit or stash them first. A cut rewrites both files and commits them by name, and it will not put somebody else\'s edit inside a release commit.',
+        'Commit or stash them first. A cut rewrites these files and commits them by name, and it will not put somebody else\'s edit inside a release commit.',
       ].join('\n'),
     );
   }
@@ -220,9 +249,15 @@ function main(): void {
 
   const changelogPath = join(ROOT, 'CHANGELOG.md');
   const packagePath = join(ROOT, 'package.json');
+  const lockPath = join(ROOT, 'package-lock.json');
+
+  // A fork on another package manager has no npm lockfile, and a release is
+  // not the moment to have an opinion about that.
+  const written = ['CHANGELOG.md', 'package.json'];
+  if (existsSync(lockPath)) written.push('package-lock.json');
 
   try {
-    refuseIfDirty();
+    refuseIfDirty(written);
 
     const cut = cutRelease(readFileSync(changelogPath, 'utf8'), version, {
       today: todayUtc(),
@@ -232,19 +267,23 @@ function main(): void {
     writeFileSync(changelogPath, cut.changelog);
     writeFileSync(packagePath, setPackageVersion(readFileSync(packagePath, 'utf8'), version));
 
+    if (existsSync(lockPath)) {
+      writeFileSync(lockPath, setLockfileVersion(readFileSync(lockPath, 'utf8'), version));
+    }
+
     try {
-      git('commit', '--quiet', '-m', `Cut ${version}`, '--', 'CHANGELOG.md', 'package.json');
+      git('commit', '--quiet', '-m', `Cut ${version}`, '--', ...written);
     } catch (error) {
       // The files are already rewritten, and correctly. Saying only "git
       // failed" would leave somebody looking at a modified tree wondering
       // whether any of it is safe to keep.
       throw new Error(
         [
-          `CHANGELOG.md and package.json are rewritten for ${version}, but the commit failed:`,
+          `${written.join(', ')} are rewritten for ${version}, but the commit failed:`,
           '',
           error instanceof Error ? error.message : String(error),
           '',
-          `Read the diff, then commit it yourself: git commit -m 'Cut ${version}' -- CHANGELOG.md package.json`,
+          `Read the diff, then commit it yourself: git commit -m 'Cut ${version}' -- ${written.join(' ')}`,
         ].join('\n'),
       );
     }

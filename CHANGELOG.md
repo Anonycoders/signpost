@@ -18,8 +18,9 @@ version numbers mean something specific for a fork that merges updates — see
 
 - `npm run release -- 1.2.3` cuts a release: it closes the Unreleased section
   under a dated heading, opens a fresh one, updates the links, sets the version
-  in `package.json` and commits. Pushing and tagging stay manual. The steps it
-  replaces are still written down for anyone who would rather do them by hand.
+  in `package.json` and `package-lock.json`, and commits. Pushing and tagging
+  stay manual. The steps it replaces are still written down for anyone who
+  would rather do them by hand.
 
 ## [0.1.0] - 2026-09-20
 

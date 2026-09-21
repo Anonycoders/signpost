@@ -104,9 +104,9 @@ npm run release -- 1.3.0
 
 That closes `Unreleased` under `## [1.3.0]` with today's date in UTC, opens a
 fresh `Unreleased` above it, repoints `[Unreleased]` and adds `[1.3.0]` at the
-foot of the file, sets the version in `package.json`, and commits both as
-`Cut 1.3.0`. Then it prints the notes it is about to publish and the two
-commands left:
+foot of the file, sets the version in `package.json` and `package-lock.json`,
+and commits them as `Cut 1.3.0`. Then it prints the notes it is about to publish
+and the two commands left:
 
 ```bash
 git push origin main
@@ -155,7 +155,7 @@ thing this repository produces that outlives a mistake.
 
 `npm run release` only does what a person would do to the file, and a fork
 without a working Node setup — or anyone who would simply rather see it — can do
-the same four edits directly.
+the same edits directly.
 
 1. **Close the section.** Change `## [Unreleased]` to `## [1.3.0] - 2026-09-21`
    with today's date in UTC, and open a fresh empty `## [Unreleased]` above it
@@ -171,7 +171,11 @@ the same four edits directly.
    A first release has no range to compare against, so it links to its own tag
    page instead: `…/releases/tag/v1.3.0`.
 
-3. **Set the version** in `package.json` to match.
+3. **Set the version** in `package.json` to match, and the two that belong to
+   this package in `package-lock.json` — the top-level `"version"` and the one
+   under `"packages"` at the empty key. Every other `"version"` in that file
+   belongs to a dependency. Nothing fails if you skip it; the next
+   `npm install` will simply rewrite it and leave you a diff to explain.
 
 4. **Read it back**, exactly as the workflow will:
 

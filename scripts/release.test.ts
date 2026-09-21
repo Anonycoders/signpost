@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { changelogProblems, parseSections, releaseNotes } from './changelog';
-import { cutRelease, setPackageVersion } from './release';
+import { cutRelease, setLockfileVersion, setPackageVersion } from './release';
 
 /**
  * Cutting a release rewrites the one file a release is made of, and the
@@ -167,5 +167,50 @@ describe('the version in package.json', () => {
 
   it('says so when there is nothing to set', () => {
     expect(() => setPackageVersion('{"name": "signpost"}', '0.2.0')).toThrow(/no "version" field/);
+  });
+});
+
+describe('the version in package-lock.json', () => {
+  /**
+   * A dependency whose own version happens to read 0.1.0, which is why this
+   * is parsed rather than pattern-matched: a search and replace would set the
+   * dependency to the release number too.
+   */
+  const LOCK = `${JSON.stringify(
+    {
+      name: 'signpost',
+      version: '0.1.0',
+      lockfileVersion: 3,
+      packages: {
+        '': { name: 'signpost', version: '0.1.0', dependencies: { astro: '^7.3.3' } },
+        'node_modules/some-dep': { version: '0.1.0', resolved: 'https://example.com/some-dep' },
+      },
+    },
+    null,
+    2,
+  )}\n`;
+
+  it('is set in both places this package records its own', () => {
+    const after = JSON.parse(setLockfileVersion(LOCK, '0.2.0'));
+
+    expect(after.version).toBe('0.2.0');
+    expect(after.packages[''].version).toBe('0.2.0');
+  });
+
+  it('leaves a dependency that shares the old number alone', () => {
+    const after = JSON.parse(setLockfileVersion(LOCK, '0.2.0'));
+
+    expect(after.packages['node_modules/some-dep'].version).toBe('0.1.0');
+  });
+
+  // npm's own formatting, so an untouched lockfile makes no diff of its own.
+  it('writes it back the way npm writes it', () => {
+    expect(setLockfileVersion(LOCK, '0.1.0')).toBe(LOCK);
+  });
+
+  it('says so when there is nothing to set', () => {
+    expect(() => setLockfileVersion('{"name": "signpost"}', '0.2.0')).toThrow(
+      /no "version" field/,
+    );
   });
 });
