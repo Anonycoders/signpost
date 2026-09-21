@@ -533,6 +533,31 @@ roadmap shows the gap). It cannot make anybody care. The organizations where
 this works are the ones where "did you put it on Signpost?" becomes a normal
 question in a planning meeting.
 
+## Where this is going
+
+Today Signpost is a template. You fork it, you own the whole thing, and you take
+updates by merging — [Taking updates](#taking-updates), above. That model earns
+its place at this size: everything is visible and hackable, there is nothing to
+publish and no registry to depend on, and a fork can go its own way whenever it
+wants to without asking anybody. What it costs you is the merges, which is why a
+release carries a version number and an upgrade note rather than a list of
+commits.
+
+The direction for 1.0 is the other model — the engine as a dependency. A
+Signpost repository would then hold `content/`, `site.config.ts` and the
+workflows, and take the rest from a package, the way a MkDocs or Docusaurus site
+takes its theme. Updating would be `npm update` and reading a changelog rather
+than a merge. No date is being promised here, and nothing about the way it works
+today is deprecated by saying it.
+
+**What that means for you now** is the line this guide opens with, and it is
+worth taking literally: edit `content/` and `site.config.ts`, and leave the rest
+alone. That boundary is not housekeeping — it is the interface a package would
+have to keep. A fork that has stayed inside it can be handed a dependency one
+day and lose nothing. A fork that has edited a component to change a label has
+to unpick that first, and no upgrade note will ever mention it, because nobody
+upstream knows it happened.
+
 ## Getting help
 
 Open an issue upstream. If you have adapted it in a way others would benefit

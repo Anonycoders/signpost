@@ -26,6 +26,10 @@ ours.
   the files on a conflict, and never pushes.
 - `template` in `site.config.ts`, optional: where `npm run update` fetches from
   when there is no git remote named `template`. A direct fork leaves it alone.
+- The adopting guide says where the fork-and-merge model is going — the engine
+  as a dependency, at 1.0 — and what that means for a fork today, which is that
+  `content/` and `site.config.ts` are the only two places to edit, because that
+  boundary is what a package would later have to keep.
 
 - `npm run release -- 1.2.3` cuts a release: it closes the Unreleased section
   under a dated heading, opens a fresh one, updates the links, sets the version

@@ -566,10 +566,13 @@ Contributions to the code are welcome too.
 [docs/developing.md](docs/developing.md) is the guide for that: the data flow,
 the two validation layers, the styling tokens and what not to hardcode. The
 config surface an organization owns is described separately in
-[docs/adopting.md](docs/adopting.md). Run `npm run check && npm run test` before
-opening the PR; anything that changes what a contributor sees when they get a
-file wrong should come with a test asserting the new wording, because those
-messages are the product.
+[docs/adopting.md](docs/adopting.md) — and that surface is the one to think
+twice before widening, because it is what a package would later have to keep:
+see [Where this is going](docs/adopting.md#where-this-is-going).
+
+Run `npm run check && npm run test` before opening the PR; anything that changes
+what a contributor sees when they get a file wrong should come with a test
+asserting the new wording, because those messages are the product.
 
 If the change is one anybody would notice — a new capability, a fix, anything
 that alters what a field means — add a line for it under `## [Unreleased]` in
