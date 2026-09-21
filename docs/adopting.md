@@ -481,6 +481,45 @@ which deprecation is a different product from one that does not.
 
 ---
 
+## Taking updates
+
+A fork is a copy, so an update is a merge. One command does it:
+
+```bash
+npm run update -- --dry-run
+```
+
+That fetches the template and says what merging would bring: how many commits,
+across how many files, which releases you are behind, and — the part worth
+reading — the upgrade note each of those releases carries. Somebody wrote those
+notes at the moment they made the change, while they still knew what it would
+cost you. Drop `--dry-run` and the same report is followed by the merge.
+
+Mind the `run`. `npm update` without it is npm's own command and updates your
+dependencies, which is a different thing entirely.
+
+It refuses to start if you have uncommitted changes, because `git merge --abort`
+puts back the merge and not work that was never committed. It never pushes: the
+merge is one local commit, `git reset --hard ORIG_HEAD` undoes it, and what to
+run next is printed when it finishes.
+
+**Where it fetches from** is a git remote named `template`, or — if you have not
+got one — the `template` field in `site.config.ts`, which it then adds for you. A
+direct fork of Signpost leaves that field as it is; a fork of a fork points it at
+whichever repository it actually forked. If you have set the remote yourself and
+it disagrees with the config, the remote wins and the command says so rather than
+repointing it behind your back.
+
+**On a conflict** it stops and names the files. Two are worth expecting:
+
+- `site.config.ts`, the likeliest, because it is the file you edit and the file
+  new options arrive in. Read both sides rather than keeping yours wholesale:
+  keeping yours silently drops whatever field the release just added, and no
+  upgrade note can warn you about that, because upstream does not know which
+  lines you changed.
+- Anything under `content/`, which means the template has started shipping a
+  file where you keep your own. Your content is yours.
+
 ## What you are signing up for
 
 Signpost has no backend, no database and no scheduled maintenance. The running

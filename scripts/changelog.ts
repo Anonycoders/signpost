@@ -94,6 +94,29 @@ function finish(current: { version: string; date?: string; lines: string[] }): S
   return { version: current.version, date: current.date, body: current.lines.join('\n').trim() };
 }
 
+/**
+ * What a section says a fork has to do, without the label.
+ *
+ * The note runs to the end of its paragraph: a blank line ends it, and a
+ * two-line note is common, because "nothing to do" is one sentence and anything
+ * else usually needs three. Returned exactly as written, markdown and all —
+ * these end up in a terminal, where a pair of backticks reads perfectly well
+ * and a renderer would be a second place for the format to be decided.
+ */
+export function upgradeNote(body: string): string | undefined {
+  if (!UPGRADING.test(body)) return undefined;
+
+  const lines = body.split('\n');
+  const start = lines.findIndex((line) => UPGRADING.test(line));
+  const rest = lines.slice(start);
+  const end = rest.findIndex((line, index) => index > 0 && line.trim() === '');
+
+  return (end === -1 ? rest : rest.slice(0, end))
+    .join('\n')
+    .replace(/^\*\*Upgrading:\*\*[^\S\n]+/, '')
+    .trim();
+}
+
 /** The versions the link definitions at the foot of the file name. */
 function linkedVersions(text: string): string[] {
   return text
@@ -233,8 +256,6 @@ export function releaseNotes(text: string, tag: string): string {
         `CHANGELOG.md has no section for ${version}.`,
         '',
         `A release is made of what is already written down, so the section has to exist before the tag does. \`npm run release -- ${version}\` does that for you; docs/releasing.md has the manual sequence if you would rather.`,
-        '',
-        'docs/releasing.md has the whole sequence.',
       ].join('\n'),
     );
   }

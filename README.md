@@ -128,6 +128,7 @@ scripts/
   announce.ts                     the CLI that reads, posts and records
   changelog.ts                    reads CHANGELOG.md for the release notes
   release.ts                      cuts a version: dates it, opens a new one
+  update.ts                       merges the template, upgrade notes first
 CHANGELOG.md                      what changed, hand-written, per version
 .github/
   workflows/ci.yml                validate + check + test on every PR

@@ -5,8 +5,10 @@ know what a version number is telling them.
 
 Signpost is not a package. Nobody installs it: a fork is a copy of this
 repository with its own `content/` and its own `site.config.ts`, and taking an
-update means merging upstream into that copy. So a release exists to answer one
-question, asked by someone who has just pulled and is looking at a diff —
+update means merging upstream into that copy — which is what `npm run update`
+does, printing the notes below before it touches anything. So a release exists
+to answer one question, asked by someone who has just pulled and is looking at a
+diff —
 
 > do I have to do anything, or can I merge this and get on with my day?
 

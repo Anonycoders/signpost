@@ -18,6 +18,7 @@
     "announce": "tsx scripts/announce.ts",
     "release-notes": "tsx scripts/changelog.ts",
     "release": "tsx scripts/release.ts",
+    "update": "tsx scripts/update.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

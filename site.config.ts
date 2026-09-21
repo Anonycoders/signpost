@@ -132,6 +132,25 @@ export interface SiteConfig {
     /** Branch that the site deploys from. */
     branch: string;
   };
+  /**
+   * The repository this one was forked from, for `npm run update`.
+   *
+   * `repository` above is *your* copy — the one "Edit this page" points at.
+   * This is the one updates come from, and for a fork of a fork it is whichever
+   * repository you actually forked; anything further upstream is their problem,
+   * not yours.
+   *
+   * Nothing on the site reads it. It exists so that a fresh clone with no
+   * remotes configured still knows where its updates live, which is the one
+   * moment the answer is hard to find. An existing `template` git remote wins
+   * over it, because that is what your git is actually set up to do.
+   */
+  template?: {
+    /** Repository to take updates from. A clone URL or the web URL. */
+    url: string;
+    /** Branch updates come from. Defaults to `main`. */
+    branch?: string;
+  };
   /** Where to send people who have a question the site cannot answer. */
   contact: {
     label: string;
@@ -196,6 +215,13 @@ export const siteConfig: SiteConfig = {
   organization: 'Example Organization',
 
   repository: {
+    url: 'https://github.com/Anonycoders/signpost',
+    branch: 'main',
+  },
+
+  // Where `npm run update` takes updates from. A direct fork of Signpost keeps
+  // this as it is; a fork of a fork points it at the one it forked.
+  template: {
     url: 'https://github.com/Anonycoders/signpost',
     branch: 'main',
   },

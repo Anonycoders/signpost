@@ -672,14 +672,35 @@ npm run --silent release-notes -- v0.1.0
 [`scripts/release.ts`](../scripts/release.ts) is the other half, and the one run
 on release day: `npm run release -- 1.3.0` closes `Unreleased` under a dated
 heading, opens a fresh one, updates the link definitions, sets the version in
-`package.json` and commits both. It imports `changelog.ts` rather than repeating
-any of it, and holds its own output to `changelogProblems` before writing —
-producing a file the release workflow would reject is a bug here, and it says
-so in those words. Pushing and tagging are not automated, because the commit it
-makes is the last reversible step.
+`package.json` and `package-lock.json`, and commits them. It imports
+`changelog.ts` rather than repeating any of it, and holds its own output to
+`changelogProblems` before writing — producing a file the release workflow would
+reject is a bug here, and it says so in those words. Pushing and tagging are not
+automated, because the commit it makes is the last reversible step.
 
 Who releases, when, and what the numbers promise a fork are in
 [docs/releasing.md](releasing.md).
+
+### The far end: `npm run update`
+
+[`scripts/update.ts`](../scripts/update.ts) is the only thing here written for
+somebody else's repository. It fetches the template, works out which releases
+the fork has no section for, prints each one's upgrade note, and then merges —
+report first, always, because the decision it exists to support is whether to
+merge at all, and that decision is worth nothing afterwards. It is the first
+thing that reads those notes back; until now they were written and never
+consumed.
+
+"Behind" is membership, not arithmetic: a fork has a release when its changelog
+has that release's section. Comparing the highest version on each side would be
+a guess about a history we cannot see, and it would tell a fork that
+cherry-picked, or forked mid-version, something confidently wrong.
+
+The pure halves — `releasesBehind` and `updateReport` — are unit-tested in
+`scripts/update.test.ts`. The git is not, and is proven by running the thing in
+a scratch clone; anything that changes the refusals or the conflict advice
+should be run that way before it ships, because those sentences are read by
+somebody whose working tree is already in an unfamiliar state.
 
 ---
 
