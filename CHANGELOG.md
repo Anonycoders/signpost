@@ -12,6 +12,10 @@ version numbers mean something specific for a fork that merges updates — see
 
 ## [Unreleased]
 
+**Upgrading:** Nothing to do.
+
+## [0.2.0] - 2026-09-21
+
 **Upgrading:** The merge that brings this one is necessarily a manual one — the
 command does not exist in your fork until it has landed. `git fetch template &&
 git merge template/main`; docs/adopting.md has the longer version. Every update
@@ -60,5 +64,6 @@ merge it into yet.
   and staying silent in a fork that has not configured them.
 - Deployment to GitHub Pages, and a nightly rebuild so relative dates stay true.
 
-[Unreleased]: https://github.com/Anonycoders/signpost/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Anonycoders/signpost/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Anonycoders/signpost/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Anonycoders/signpost/releases/tag/v0.1.0
